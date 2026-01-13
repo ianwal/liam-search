@@ -147,7 +147,7 @@
 							<iframe
 								width="512"
 								height="288"
-								src="https://www.youtube.com/embed/{video.video_id}?start={timestamp}"
+								src="https://www.youtube-nocookie.com/embed/{video.video_id}?start={timestamp}"
 								title=""
 								frameborder="0"
 								allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
