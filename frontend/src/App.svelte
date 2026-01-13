@@ -14,6 +14,13 @@
 	async function doSearch(query: string, page?: number) {
 		const res = await fetch(`${import.meta.env.VITE_API_URL}/search?query=${query}&page=${page}`);
 		data = await res.json();
+
+		const url = new URL(window.location.toString());
+		url.searchParams.set("query", query);
+		url.searchParams.set("page", data.page.toString());
+		history.pushState({}, "", url);
+
+		document.title = `Liam Search - Search for "${query}" (page ${data.page}/${data.totalPages})`;
 	}
 
 	async function updateStatus() {
@@ -48,15 +55,23 @@
 				await updateStatus();
 			}
 		});
+
+		const url = new URL(window.location.toString());
+		const query = url.searchParams.get("query");
+		const page = parseInt(url.searchParams.get("page") || "1");
+		if (query) {
+			searchQueryInput.value = query;
+			doSearch(query, page);
+		}
 	});
 </script>
 
 <main class="mx-auto flex h-screen w-[512px] flex-col gap-5 pt-10">
 	<div class="flex flex-col items-center">
-		<div class="flex items-center justify-center gap-5">
+		<a href="/" class="flex items-center justify-center gap-5">
 			<img src="logo.png" alt="Liam logo" class="h-16" />
 			<h1>Liam Search</h1>
-		</div>
+		</a>
 		<p class="text-gray-500">made by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
 	</div>
 	<form
@@ -164,7 +179,7 @@
 		{/if}
 	{/if}
 	<footer class="mt-auto flex flex-col items-center gap-5 py-10 text-gray-500">
-		<span>latest update: pagination. you can now see up to 1000 results.</span>
+		<span>latest update: searches now commit to your history.</span>
 		<div class="flex gap-2">
 			<button
 				onclick={() => {
