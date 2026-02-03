@@ -16,6 +16,37 @@ const ytdlp = new ytdlpWrap(process.platform == "win32" ? "./bin/yt-dlp.exe" : "
 const playlistUrls = ["PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP", "PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay"];
 const cookiesPath = "cookies.txt";
 
+const ignoredVideos: string[] = [
+	"-9MIVNz5zCY",
+	"g0K98ZoCZKg",
+	"EZ9-Gbza2LQ",
+	"BU5TXZXw9_8",
+	"pE0kzOZBUBE",
+	"5R4Hod2V7qw",
+	"PjMo5IHxNoQ",
+	"8wXE_kZTAKQ",
+	"OVgdUFzeV70",
+	"w0aLccfUZ-Y",
+	"CLuQ4YOyipQ",
+	"laEyIqfw0GA",
+	"NIyiONjLLx8",
+	"-2nFYa304Zk",
+	"wYa0z2a6pEE",
+	"yg08ZJL46kw",
+	"C3YM7QvOmxw",
+	"y6_RI5VoX2c",
+	"yE3GRTtq2yg",
+	"6XURAB4z2UU",
+	"20JyO6afOiw",
+	"LO96CohXCVM",
+	"VmZOLaMUhxM",
+	"0ajCtm2_BmI",
+	"6VbQ3Uri4zk",
+	"kp-B6EbaDuA",
+	"bSVLxDmggoo",
+	"PDvk8OZwYxQ",
+];
+
 // scuffed. needs rewrite
 async function loadVideoMetadata(file: Bun.BunFile) {
 	const currentDate = new Date().toISOString().split("T")[0] as string;
@@ -116,6 +147,10 @@ export async function downloadSubtitles(file: Bun.BunFile) {
 		if (process.stdout.isTTY) {
 			readline.cursorTo(process.stdout, 0);
 			process.stdout.write(`downloading subtitles ${i + 1} of ${videos.videos.length}...`);
+		}
+
+		if (ignoredVideos.includes(video.id)) {
+			continue;
 		}
 
 		if (!video.subtitles_path) {
