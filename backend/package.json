@@ -1,8 +1,11 @@
 {
   "name": "liam-search-backend",
   "module": "index.ts",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "bun run index.ts"
+    "dev": "bun run src/main.ts",
+    "format": "bun prettier . --write"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -10,12 +13,7 @@
   "peerDependencies": {
     "typescript": "^5"
   },
-  "private": true,
-  "type": "module",
   "dependencies": {
-    "@hono/node-server": "^1.19.6",
-    "hono": "^4.10.7",
-    "meilisearch": "^0.54.0",
-    "yt-dlp-wrap": "^2.3.12"
+    "prettier": "^3.8.1"
   }
 }
