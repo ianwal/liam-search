@@ -1,0 +1,12 @@
+export type VideoMetadata = {
+	id: string;
+	title: string;
+	duration: number;
+	uploader: string;
+	uploaderUrl: string;
+	viewCount: number;
+};
+
+export type VideoCache = VideoMetadata & {
+	aga: number;
+};
