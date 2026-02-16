@@ -23,7 +23,13 @@ export class Job {
 			Job.runningJob = this;
 			console.log(`running job (${this.name})`);
 
-			const res = await this.callback();
+			let res: JobResult;
+			try {
+				res = await this.callback();
+			} catch (err) {
+				console.error(err);
+				res = { status: "failed_queue" };
+			}
 			Job.runningJob = undefined;
 
 			this.onFinish?.(res);
@@ -35,8 +41,8 @@ export class Job {
 		}
 	}
 
-	static async pushQueue(job: Job) {
-		Job.queue.push(job);
+	static pushQueue(...job: Job[]) {
+		Job.queue.push(...job);
 		Job.runQueue();
 	}
 
@@ -52,7 +58,8 @@ export class Job {
 			if (res.status == "failed") {
 				console.error("job failed! continuing...");
 			} else if (res.status == "failed_queue") {
-				console.error("job failed! exiting...");
+				console.error("job failed! clearing queue...");
+				Job.queue.splice(0, Job.queue.length);
 				break;
 			}
 		}

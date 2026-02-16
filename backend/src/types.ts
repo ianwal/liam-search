@@ -8,5 +8,6 @@ export type VideoMetadata = {
 };
 
 export type VideoCache = VideoMetadata & {
-	aga: number;
+	tempAudioPath: string | null;
+	transcription: any | null;
 };
