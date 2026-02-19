@@ -11,5 +11,5 @@ db.run(`create table if not exists videos(
 	uploaderUrl text not null,
 	viewCount integer not null,
 	tempAudioPath text,
-	transcriptJson text
+	transcript text
 )`);

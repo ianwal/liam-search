@@ -14,7 +14,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "nodejs-whisper": "^0.2.9",
     "prettier": "^3.8.1",
     "ytdlp-nodejs": "^3.4.4"
   }

@@ -1,10 +1,10 @@
 import { exists } from "fs/promises";
 import path from "path";
-import { nodewhisper } from "nodejs-whisper";
 import { YtDlp, helpers, type PlaylistInfo } from "ytdlp-nodejs";
 import { Job } from "./jobs";
 import type { VideoMetadata } from "./types";
 import { db } from "./db";
+import { $ } from "bun";
 
 const ytdlp = new YtDlp();
 const cookiesPath = path.resolve(__dirname, "../cookies.txt");
@@ -63,7 +63,7 @@ Job.pushQueue(
 							}
 						}
 
-						for (const video of db.query("select id, tempAudioPath from videos").all() as { id: string; tempAudioPath: string | null }[]) {
+						for (const video of db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[]) {
 							// todo: add subjobs or something
 							await transcribeVideo(video.id, video.tempAudioPath);
 						}
@@ -76,7 +76,6 @@ Job.pushQueue(
 	),
 );
 
-// todo: use sql instead of json for cache
 // kinda scuffed and doesn't really use the job system correctly
 async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 	if (tempAudioPath == null || !(await Bun.file(tempAudioPath).exists())) {
@@ -98,27 +97,20 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 	Job.pushQueue(
 		new Job(`transcribe audio (${videoId})`, async () => {
 			if (tempAudioPath != null) {
-				const transcription = await nodewhisper(tempAudioPath!, {
-					modelName: "large-v3-turbo",
-					removeWavFileAfterTranscription: true,
-					whisperOptions: {
-						timestamps_length: 20,
-						splitOnWord: true,
-					},
+				const outPath = path.resolve(__dirname, `../temp/${videoId}.json`);
+
+				Bun.spawnSync({
+					cmd: ["uv", "run", "main.py", tempAudioPath, outPath],
+					cwd: path.resolve(__dirname, "./transcriber"),
+					stdout: "ignore",
 				});
 
+				const transcription = await Bun.file(outPath).json();
+
+				db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), videoId);
+
 				await Bun.file(tempAudioPath!).delete();
-
-				const json = transcription
-					.trim()
-					.split("\n")
-					.map((line) => ({
-						from: line.split(" ")[0]!.slice(1),
-						to: line.split(" ")[2]!.slice(0, -1),
-						text: line.slice(line.indexOf("]") + 1).trim(),
-					}));
-
-				db.query(`update videos set tempAudioPath = null, transcriptJson = ? where id = ?`).run(JSON.stringify(json), videoId);
+				await Bun.file(outPath!).delete();
 
 				return { status: "success" };
 			} else {

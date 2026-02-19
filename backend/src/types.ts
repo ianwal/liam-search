@@ -9,5 +9,5 @@ export type VideoMetadata = {
 
 export type VideoCache = VideoMetadata & {
 	tempAudioPath: string | null;
-	transcriptJson: string | null;
+	transcript: string | null;
 };
