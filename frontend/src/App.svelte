@@ -85,7 +85,13 @@
 		<input type="text" bind:this={searchQueryInput} autofocus placeholder="use double quotes to search an exact phrase" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
 		<button class="btn rounded-none! px-4!"><Search class="w-5" /></button>
 	</form>
-	<StatusBanner {status} />
+	<div class="w-full rounded-lg bg-red-950 p-3 text-center text-red-400">
+		<span>temporarily down!</span>
+	</div>
+	<span class="text-center text-gray-300">
+		i'm in the middle of reworking the entire backend to allow for swear words and advanced sorting. keeping this shutdown for now because the current backend is frying my server. sorry for the inconvenience. should hopefully be back by the
+		end of feb :)
+	</span>
 	{#if data}
 		{#if data.results?.length > 0}
 			{#snippet resultsText()}
