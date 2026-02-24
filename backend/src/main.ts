@@ -2,11 +2,16 @@ import { exists } from "fs/promises";
 import path from "path";
 import { YtDlp, helpers, type PlaylistInfo } from "ytdlp-nodejs";
 import { Job } from "./jobs";
-import type { VideoMetadata } from "./types";
+import type { IndexSegment, VideoMetadata } from "./types";
 import { db } from "./db";
-import { $ } from "bun";
+import MiniSearch from "minisearch";
 
 const ytdlp = new YtDlp();
+const index = new MiniSearch({
+	fields: ["text"],
+	storeFields: ["videoId", "seconds", "text"],
+});
+
 const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
 process.on("SIGINT", function () {
@@ -54,15 +59,18 @@ Job.pushQueue(
 		(res) => {
 			if (res.status == "success") {
 				Job.pushQueue(
-					new Job("check cached videos", async () => {
+					new Job("update videos cache", async () => {
 						for (const videoMetadata of res.data!.videoMetadata as VideoMetadata[]) {
 							// if video metadata isn't cached yet
 							if (db.query("select id from videos where id = ?").get(videoMetadata.id) == null) {
-								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?)`);
-								query.run(...Object.values(videoMetadata), null, null);
+								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+								query.run(...Object.values(videoMetadata), null, null, Date.now());
 							}
 						}
 
+						return { status: "success" };
+					}),
+					new Job("transcribe new videos", async () => {
 						for (const video of db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[]) {
 							// todo: add subjobs or something
 							await transcribeVideo(video.id, video.tempAudioPath);
@@ -119,3 +127,31 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 		}),
 	);
 }
+
+async function search(query: string) {
+	// todo: build the index when db changes instead of every search
+	const segments: IndexSegment[] = db
+		.query("select id, transcript from videos")
+		.all()
+		.flatMap((video: any, videoIndex) => {
+			const transcript: any[] = JSON.parse(video.transcript);
+
+			return transcript.map((segment, segmentIndex) => {
+				return {
+					id: videoIndex + segmentIndex,
+					videoId: video.id as string,
+					seconds: Math.floor(segment.start / 1000),
+					text: segment.text as string,
+				};
+			});
+		});
+
+	index.removeAll();
+	index.addAll(segments);
+
+	const results = index.search(query, { combineWith: "AND" });
+
+	return results.map(({ videoId, seconds, text }) => ({ videoId, seconds, text }));
+}
+
+console.log(await search("for the"));

@@ -21,7 +21,7 @@ export class Job {
 	async run(): Promise<JobResult> {
 		if (Job.runningJob == undefined) {
 			Job.runningJob = this;
-			console.log(`running job (${this.name})`);
+			console.log(`running '${this.name}'`);
 
 			let res: JobResult;
 			try {

@@ -11,5 +11,6 @@ db.run(`create table if not exists videos(
 	uploaderUrl text not null,
 	viewCount integer not null,
 	tempAudioPath text,
-	transcript text
+	transcript text,
+	cacheTimestamp number
 )`);
