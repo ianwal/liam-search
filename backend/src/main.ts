@@ -1,10 +1,11 @@
 import { exists } from "fs/promises";
+import MiniSearch from "minisearch";
 import path from "path";
-import { YtDlp, helpers, type PlaylistInfo } from "ytdlp-nodejs";
+import { type PlaylistInfo, YtDlp, helpers } from "ytdlp-nodejs";
+
+import { db } from "./db";
 import { Job } from "./jobs";
 import type { IndexSegment, VideoMetadata } from "./types";
-import { db } from "./db";
-import MiniSearch from "minisearch";
 
 const ytdlp = new YtDlp();
 const index = new MiniSearch({
