@@ -5,7 +5,7 @@ import { type PlaylistInfo, type VideoInfo, YtDlp, helpers } from "ytdlp-nodejs"
 import app from "./api";
 import { db } from "./db";
 import { Job } from "./jobs";
-import type { VideoMetadata } from "./types";
+import type { VideoCache, VideoMetadata } from "./types";
 
 const ytdlp = new YtDlp();
 
@@ -65,15 +65,22 @@ Job.pushQueue(
 			if (res.status == "success") {
 				Job.pushQueue(
 					new Job("update videos cache", async () => {
-						for (const v of res.data!.videoMetadata as VideoMetadata[]) {
-							// if video metadata isn't cached yet
-							// todo: update cache if expired
-							if (db.query("select id from videos where id = ?").get(v.id) == null) {
-								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${v.id}`, { cookies: cookiesPath })) as VideoInfo;
-								v.uploadTimestamp = videoInfo.timestamp;
+						for (const video of res.data!.videoMetadata as VideoMetadata[]) {
+							const cachedVideo = db.query("select * from videos where id = ?").get(video.id) as VideoCache;
+
+							if (cachedVideo) {
+								if (Date.now() > cachedVideo.cacheTimestamp + 24 * 60 * 60 * 1000) {
+									const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+									video.uploadTimestamp = videoInfo.timestamp;
+
+									db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
+								}
+							} else {
+								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+								video.uploadTimestamp = videoInfo.timestamp;
 
 								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-								query.run(v.id, v.title, v.thumbnailUrl, v.uploadTimestamp, v.duration, v.uploader, v.uploaderUrl, v.viewCount, null, null, Date.now());
+								query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
 							}
 						}
 
