@@ -16,6 +16,8 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@hono/bun-compress": "^0.1.0",
+    "hono": "^4.12.2",
     "minisearch": "^7.2.0",
     "ytdlp-nodejs": "^3.4.4"
   }

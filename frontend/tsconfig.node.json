@@ -13,6 +13,7 @@
 		"verbatimModuleSyntax": true,
 		"moduleDetection": "force",
 		"noEmit": true,
+		"composite": true,
 
 		/* Linting */
 		"strict": true,
@@ -20,7 +21,16 @@
 		"noUnusedParameters": true,
 		"erasableSyntaxOnly": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUncheckedSideEffectImports": true
+		"noUncheckedSideEffectImports": true,
+
+		"paths": {
+			"@/*": ["../shared/*"]
+		}
 	},
+	"references": [
+		{
+			"path": "../shared",
+		}
+	],
 	"include": ["vite.config.ts"]
 }

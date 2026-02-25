@@ -1,17 +1,13 @@
 import { exists } from "fs/promises";
-import MiniSearch from "minisearch";
 import path from "path";
-import { type PlaylistInfo, YtDlp, helpers } from "ytdlp-nodejs";
+import { type PlaylistInfo, type VideoInfo, YtDlp, helpers } from "ytdlp-nodejs";
 
+import app from "./api";
 import { db } from "./db";
 import { Job } from "./jobs";
-import type { IndexSegment, VideoMetadata } from "./types";
+import type { VideoMetadata } from "./types";
 
 const ytdlp = new YtDlp();
-const index = new MiniSearch({
-	fields: ["text"],
-	storeFields: ["videoId", "seconds", "text"],
-});
 
 const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
@@ -21,6 +17,13 @@ process.on("SIGINT", function () {
 
 	process.exit();
 });
+
+Bun.serve({
+	port: 3000,
+	fetch: app.fetch,
+});
+
+console.log("serving api at http://localhost:3000");
 
 Job.pushQueue(
 	new Job("download yt-dlp", async () => {
@@ -42,9 +45,10 @@ Job.pushQueue(
 			const playlistInfo = (await ytdlp.getInfoAsync("https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZI0Ijd1xcjcT3Y6ht5NEX9", { cookies: cookiesPath })) as PlaylistInfo;
 
 			if (playlistInfo.entries.length > 0) {
-				const videoMetadata: VideoMetadata[] = playlistInfo.entries.map((video: any) => ({
+				const videoMetadata = playlistInfo.entries.map((video: any) => ({
 					id: video.id,
 					title: video.title,
+					thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`,
 					duration: video.duration,
 					uploader: video.uploader,
 					uploaderUrl: video.uploader_url,
@@ -61,11 +65,15 @@ Job.pushQueue(
 			if (res.status == "success") {
 				Job.pushQueue(
 					new Job("update videos cache", async () => {
-						for (const videoMetadata of res.data!.videoMetadata as VideoMetadata[]) {
+						for (const v of res.data!.videoMetadata as VideoMetadata[]) {
 							// if video metadata isn't cached yet
-							if (db.query("select id from videos where id = ?").get(videoMetadata.id) == null) {
-								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-								query.run(...Object.values(videoMetadata), null, null, Date.now());
+							// todo: update cache if expired
+							if (db.query("select id from videos where id = ?").get(v.id) == null) {
+								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${v.id}`, { cookies: cookiesPath })) as VideoInfo;
+								v.uploadTimestamp = videoInfo.timestamp;
+
+								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+								query.run(v.id, v.title, v.thumbnailUrl, v.uploadTimestamp, v.duration, v.uploader, v.uploaderUrl, v.viewCount, null, null, Date.now());
 							}
 						}
 
@@ -128,31 +136,3 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 		}),
 	);
 }
-
-async function search(query: string) {
-	// todo: build the index when db changes instead of every search
-	const segments: IndexSegment[] = db
-		.query("select id, transcript from videos")
-		.all()
-		.flatMap((video: any, videoIndex) => {
-			const transcript: any[] = JSON.parse(video.transcript);
-
-			return transcript.map((segment, segmentIndex) => {
-				return {
-					id: videoIndex + segmentIndex,
-					videoId: video.id as string,
-					seconds: Math.floor(segment.start / 1000),
-					text: segment.text as string,
-				};
-			});
-		});
-
-	index.removeAll();
-	index.addAll(segments);
-
-	const results = index.search(query, { combineWith: "AND" });
-
-	return results.map(({ videoId, seconds, text }) => ({ videoId, seconds, text }));
-}
-
-console.log(await search("for the"));
