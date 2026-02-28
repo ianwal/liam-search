@@ -87,12 +87,18 @@ Job.pushQueue(
 						return { status: "success" };
 					}),
 					new Job("transcribe new videos", async () => {
-						for (const video of db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[]) {
-							// todo: add subjobs or something
-							await transcribeVideo(video.id, video.tempAudioPath);
-						}
+						const newVideos = db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[];
 
-						return { status: "success" };
+						if (newVideos.length > 0) {
+							for (const video of newVideos) {
+								// todo: add subjobs or something
+								await transcribeVideo(video.id, video.tempAudioPath);
+							}
+
+							return { status: "success" };
+						} else {
+							return { status: "skipped" };
+						}
 					}),
 				);
 			}

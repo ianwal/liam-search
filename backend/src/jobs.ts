@@ -61,6 +61,10 @@ export class Job {
 				console.error("job failed! clearing queue...");
 				Job.queue.splice(0, Job.queue.length);
 				break;
+			} else if (res.status == "skipped") {
+				console.log("job skipped");
+			} else if (res.status == "success") {
+				console.log("job finished");
 			}
 		}
 

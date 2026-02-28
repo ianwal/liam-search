@@ -14,10 +14,3 @@ export type VideoCache = VideoMetadata & {
 	transcript: string | null;
 	cacheTimestamp: number;
 };
-
-export type IndexSegment = {
-	id: number;
-	videoId: string;
-	seconds: number;
-	text: string;
-};

@@ -3,16 +3,15 @@ import MiniSearch from "minisearch";
 import type { SearchResult } from "@/types";
 
 import { db } from "./db";
-import type { IndexSegment } from "./types";
 
 const index = new MiniSearch({
 	fields: ["text"],
 	storeFields: ["videoId", "seconds", "text"],
 });
 
-export async function search(query: string): Promise<SearchResult[]> {
+export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any"): Promise<SearchResult[]> {
 	// todo: build the index when db changes instead of every search
-	const segments: IndexSegment[] = db
+	const segments = db
 		.query("select id, transcript from videos")
 		.all()
 		.flatMap((video: any, videoIndex) => {
@@ -31,18 +30,24 @@ export async function search(query: string): Promise<SearchResult[]> {
 	index.removeAll();
 	index.addAll(segments);
 
-	const results = index.search(query, { combineWith: "AND" });
+	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
 
-	return results.map(({ videoId, seconds, text }) => {
-		const video = db.query("select title, thumbnailUrl from videos where id = ?").get(videoId) as { title: string, thumbnailUrl: string };
+	const richResults = results.map(({ videoId, seconds, text }) => {
+		const video = db.query("select title, thumbnailUrl, uploadTimestamp from videos where id = ?").get(videoId) as { title: string; thumbnailUrl: string; uploadTimestamp: number };
 		return {
 			video: {
 				id: videoId,
 				title: video.title,
 				thumbnailUrl: video.thumbnailUrl,
+				uploadTimestamp: video.uploadTimestamp,
 			},
 			seconds,
 			text,
 		};
 	});
+
+	if (sort == "latest") richResults.sort((a, b) => a.video.uploadTimestamp - b.video.uploadTimestamp || b.seconds - a.seconds);
+	if (sort == "oldest") richResults.sort((a, b) => b.video.uploadTimestamp - a.video.uploadTimestamp || a.seconds - b.seconds);
+
+	return richResults;
 }
