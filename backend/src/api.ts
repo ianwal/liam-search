@@ -1,6 +1,7 @@
 import { compress } from "@hono/bun-compress";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
+import { rateLimiter } from "hono-rate-limiter";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { z } from "zod";
@@ -13,6 +14,13 @@ const app = new Hono();
 app.use("*", cors());
 app.use(logger());
 app.use(compress());
+app.use(
+	rateLimiter({
+		windowMs: 30 * 1000,
+		limit: 10,
+		keyGenerator: (c) => c.req.header("x-forwarded-for") ?? "",
+	}),
+);
 
 app.get(
 	"/search",
