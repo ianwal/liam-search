@@ -11,6 +11,14 @@ const ytdlp = new YtDlp();
 
 const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
+const uploadDateOverrides: { [id: string]: Date } = {
+	"HGoVx0-0tJ4": new Date("2017-01-01"),
+	"mzGXgJVJPhM": new Date("2018-01-01"),
+	"2dx8Tz_eJY8": new Date("2019-01-01"),
+	"ED1pc5u_HbM": new Date("2020-01-01"),
+	"Xj2vHvMmHF0": new Date("2021-01-01"),
+};
+
 process.on("SIGINT", function () {
 	console.log("closing database...");
 	db.close(false);
@@ -71,16 +79,20 @@ Job.pushQueue(
 							if (cachedVideo) {
 								if (Date.now() > cachedVideo.cacheTimestamp + 24 * 60 * 60 * 1000) {
 									const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
-									video.uploadTimestamp = videoInfo.timestamp;
+									video.uploadTimestamp = videoInfo.timestamp * 1000;
 
 									db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
 								}
 							} else {
 								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
-								video.uploadTimestamp = videoInfo.timestamp;
+								video.uploadTimestamp = videoInfo.timestamp * 1000;
 
 								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 								query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
+							}
+
+							if (uploadDateOverrides[video.id]) {
+								db.query(`update videos set uploadTimestamp = ? where id = ?`).run(uploadDateOverrides[video.id]!.getTime(), video.id);
 							}
 						}
 
