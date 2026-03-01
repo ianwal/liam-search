@@ -42,7 +42,7 @@ Job.pushQueue(
 	new Job(
 		"fetch playlist info",
 		async () => {
-			const playlistInfo = (await ytdlp.getInfoAsync("https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZI0Ijd1xcjcT3Y6ht5NEX9", { cookies: cookiesPath })) as PlaylistInfo;
+			const playlistInfo = (await ytdlp.getInfoAsync("https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay", { cookies: cookiesPath })) as PlaylistInfo;
 
 			if (playlistInfo.entries.length > 0) {
 				const videoMetadata = playlistInfo.entries.map((video: any) => ({
@@ -126,26 +126,31 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 
 	Job.pushQueue(
 		new Job(`transcribe audio (${videoId})`, async () => {
-			if (tempAudioPath != null) {
-				const outPath = path.resolve(__dirname, `../temp/${videoId}.json`);
+			return new Promise(async (res) => {
+				if (tempAudioPath != null) {
+					const outPath = path.resolve(__dirname, `../temp/${videoId}.json`);
 
-				Bun.spawnSync({
-					cmd: ["uv", "run", "main.py", tempAudioPath, outPath],
-					cwd: path.resolve(__dirname, "./transcriber"),
-					stdout: "ignore",
-				});
+					const proc = Bun.spawn({
+						cmd: ["uv", "run", "main.py", tempAudioPath, outPath],
+						cwd: path.resolve(__dirname, "./transcriber"),
+						stdout: "ignore",
+						stderr: "ignore",
+					});
 
-				const transcription = await Bun.file(outPath).json();
+					await proc.exited;
 
-				db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), videoId);
+					const transcription = await Bun.file(outPath).json();
 
-				await Bun.file(tempAudioPath!).delete();
-				await Bun.file(outPath!).delete();
+					db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), videoId);
 
-				return { status: "success" };
-			} else {
-				return { status: "failed" };
-			}
+					await Bun.file(tempAudioPath!).delete();
+					await Bun.file(outPath!).delete();
+
+					res({ status: "success" });
+				} else {
+					res({ status: "failed" });
+				}
+			});
 		}),
 	);
 }

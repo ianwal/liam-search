@@ -5,13 +5,13 @@ import sys
 def main():
 	print("running transcriber")
 
-	model = whisperx.load_model("large-v3", "cuda", compute_type="float16", language="en")
+	model = whisperx.load_model("large-v3", "cuda", compute_type="float16", language="en", asr_options={"beam_size": 5, "initial_prompt": "Hello World."})
 	print("loaded model")
 
 	audio = whisperx.load_audio(sys.argv[1])
 	print("loaded audio")
 
-	result = model.transcribe(audio, batch_size=8)
+	result = model.transcribe(audio, batch_size=8, chunk_size=8)
 
 	model_a, metadata = whisperx.load_align_model(language_code=result["language"], device="cuda")
 	result = whisperx.align(result["segments"], model_a, metadata, audio, "cuda", return_char_alignments=False)
