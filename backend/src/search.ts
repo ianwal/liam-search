@@ -6,7 +6,7 @@ import { db } from "./db";
 
 const index = new MiniSearch({
 	fields: ["text"],
-	storeFields: ["videoId", "seconds", "text"],
+	storeFields: ["previousId", "nextId", "videoId", "seconds", "text"],
 });
 
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any"): Promise<SearchResult[]> {
@@ -20,6 +20,8 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 			return transcript.map((segment, segmentIndex) => {
 				return {
 					id: videoIndex + segmentIndex,
+					previousId: segmentIndex > 0 ? videoIndex + segmentIndex - 1 : null,
+					nextId: segmentIndex < transcript.length - 1 ? videoIndex + segmentIndex + 1 : null,
 					videoId: video.id as string,
 					seconds: Math.floor(segment.start / 1000),
 					text: segment.text as string,
@@ -32,7 +34,7 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 
 	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
 
-	const richResults = results.map(({ videoId, seconds, text }) => {
+	const richResults: SearchResult[] = results.map(({ videoId, seconds, text, previousId, nextId }) => {
 		const video = db.query("select title, thumbnailUrl, uploadTimestamp from videos where id = ?").get(videoId) as { title: string; thumbnailUrl: string; uploadTimestamp: number };
 		return {
 			video: {
@@ -43,6 +45,8 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 			},
 			seconds,
 			text,
+			previousText: (index.getStoredFields(previousId)?.text as string) ?? null,
+			nextText: (index.getStoredFields(nextId)?.text as string) ?? null,
 		};
 	});
 

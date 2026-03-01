@@ -8,7 +8,10 @@ export type SearchResult = {
 		id: string;
 		title: string;
 		thumbnailUrl: string;
+		uploadTimestamp: number;
 	}
 	seconds: number;
 	text: string;
+	previousText: string | null;
+	nextText: string | null;
 };
