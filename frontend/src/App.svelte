@@ -7,7 +7,7 @@
 
 	let queryValue: string = $state("");
 	let fromValue: string = $state("");
-	let toValue: string = $state(new Date().toISOString().split("T")[0]);
+	let toValue: string = $state("");
 	let sortValue: string = $state("best");
 	let matchValue: string = $state("all");
 
@@ -201,7 +201,7 @@
 			<div>
 				<h2 class="mb-2">Notes</h2>
 				<ul class="flex list-inside list-['-_'] flex-col gap-2">
-					<li>For now, results just show the thumbnail of the video instead of a YouTube embed</li>
+					<li><span class="line-through">For now, results just show the thumbnail of the video instead of a YouTube embed</span></li>
 					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
 				</ul>
 			</div>
