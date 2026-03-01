@@ -27,7 +27,11 @@ h1 {
 }
 
 h2 {
-	@apply text-2xl text-white;
+	@apply text-lg text-white;
+}
+
+hr {
+	@apply border-gray-700;
 }
 
 input[type="text"] {

@@ -13,6 +13,8 @@
 	let searchResponse: SearchResponse | undefined = $state(undefined);
 	let searchState: "ready" | "loading" | "error" | "rate_limit" = $state("ready");
 
+	let infoModal: HTMLDialogElement;
+
 	function secondsToTimestamp(seconds: number) {
 		const hours = Math.floor(seconds / 60 / 60);
 		const minutes = Math.floor(seconds / 60) % 60;
@@ -150,9 +152,9 @@
 	</div>
 
 	<footer class="mt-auto flex flex-col items-center gap-5 py-10 text-gray-500">
-		<span>latest update: full rework! now supports date ranges, sorting, and word matching.</span>
+		<span>latest update: full rework! now supports date ranges, sorting, word matching, swear words, and more vods.</span>
 		<div class="flex gap-2">
-			<button class="link">help / more info</button>
+			<button onclick={() => infoModal.showModal()} class="link">help / more info</button>
 			<span>•</span>
 			<a href="https://github.com/zaneshaw/liam-search" target="_blank" class="link">source code<sup>🡥</sup></a>
 			<span>•</span>
@@ -160,3 +162,70 @@
 		</div>
 	</footer>
 </main>
+
+<dialog
+	bind:this={infoModal}
+	onmousedown={(e) => {
+		if (e.target == infoModal) infoModal.close();
+	}}
+	class="backdrop:bg-black/50"
+>
+	<div class="bg-background text-liam-skin light-outline fixed top-1/2 left-1/2 flex h-[600px] w-[450px] -translate-1/2 flex-col rounded">
+		<div class="border-b border-gray-700 p-4">
+			<h2>help / more info</h2>
+		</div>
+		<div class="flex flex-col gap-4 overflow-y-auto p-4">
+			<div>
+				<h2 class="mb-2">Disclaimer</h2>
+				<p>
+					Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam logo belongs to Liam. Liam Search is directly inspired by <a
+						href="https://yardsear.ch"
+						target="_blank"
+						class="link">yardsear.ch</a
+					>.
+				</p>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">Privacy Statement</h2>
+				<p>
+					I keep a log of search queries and IP addresses solely to prevent abuse. I don't sell or share these logs with third parties. By using Liam Search, you consent to this collection.
+				</p>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">Bugs / Feedback</h2>
+				<p>
+					If something is broken or you want to give feedback/suggest something, feel free to open an issue on <a
+						href="https://github.com/zaneshaw/liam-search/issues/new"
+						target="_blank"
+						class="link">GitHub</a
+					> or add me on Discord (@zaneshaw).
+				</p>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">How does Liam Search work?</h2>
+				<ol class="flex list-inside list-decimal flex-col gap-2">
+					<li>
+						Metadata and audio is pulled from the <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">Liam VODs playlist</a>
+						and
+						<a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay" target="_blank" class="link">ACIDMONEY's clip compilations</a> with
+						<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="link">yt-dlp</a> every 6 hours
+					</li>
+					<li>Audio is transcribed with <a href="https://github.com/m-bain/whisperX" target="_blank" class="link">whisperX</a> (large-v3 model)</li>
+					<li>The transcription is added to a <a href="https://github.com/lucaong/minisearch" target="_blank" class="link">MiniSearch</a> index</li>
+					<li>You query that index with whatever paramaters you set, and the results are displayed here</li>
+				</ol>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">Notes</h2>
+				<ul class="flex list-inside list-['-_'] flex-col gap-2">
+					<li>For now, results just show the thumbnail of the video instead of a YouTube embed</li>
+					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</dialog>
