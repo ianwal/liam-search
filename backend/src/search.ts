@@ -11,17 +11,20 @@ const index = new MiniSearch({
 
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any"): Promise<SearchResult[]> {
 	// todo: build the index when db changes instead of every search
+	let id = -1;
 	const segments = db
-		.query("select id, transcript from videos")
+		.query("select id, transcript from videos where transcript is not null")
 		.all()
 		.flatMap((video: any, videoIndex) => {
 			const transcript: any[] = JSON.parse(video.transcript);
 
 			return transcript.map((segment, segmentIndex) => {
+				id++;
+
 				return {
-					id: videoIndex + segmentIndex,
-					previousId: segmentIndex > 0 ? videoIndex + segmentIndex - 1 : null,
-					nextId: segmentIndex < transcript.length - 1 ? videoIndex + segmentIndex + 1 : null,
+					id: id,
+					previousId: segmentIndex > 0 ? id - 1 : null,
+					nextId: segmentIndex < transcript.length - 1 ? id + 1 : null,
 					videoId: video.id as string,
 					seconds: Math.floor(segment.start / 1000),
 					text: segment.text as string,
