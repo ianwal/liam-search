@@ -9,8 +9,9 @@ const index = new MiniSearch({
 	storeFields: ["previousId", "nextId", "videoId", "seconds", "text"],
 });
 
-export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any"): Promise<SearchResult[]> {
+export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number): Promise<SearchResult[]> {
 	// todo: build the index when db changes instead of every search
+	// todo: better id
 	let id = -1;
 	const segments = db
 		.query("select id, transcript from videos where transcript is not null")
@@ -37,7 +38,7 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 
 	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
 
-	const richResults: SearchResult[] = results.map(({ videoId, seconds, text, previousId, nextId }) => {
+	let richResults: SearchResult[] = results.map(({ videoId, seconds, text, previousId, nextId }) => {
 		const video = db.query("select title, thumbnailUrl, uploadTimestamp from videos where id = ?").get(videoId) as { title: string; thumbnailUrl: string; uploadTimestamp: number };
 		return {
 			video: {
@@ -52,6 +53,8 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 			nextText: (index.getStoredFields(nextId)?.text as string) ?? null,
 		};
 	});
+
+	richResults = richResults.filter((result) => result.video.uploadTimestamp >= from && result.video.uploadTimestamp <= to);
 
 	if (sort == "latest") richResults.sort((a, b) => a.video.uploadTimestamp - b.video.uploadTimestamp || b.seconds - a.seconds);
 	if (sort == "oldest") richResults.sort((a, b) => b.video.uploadTimestamp - a.video.uploadTimestamp || a.seconds - b.seconds);

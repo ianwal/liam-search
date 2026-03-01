@@ -6,7 +6,7 @@
 
 	let queryValue: string = $state("");
 	let fromValue: string = $state("");
-	let toValue: string = $state("");
+	let toValue: string = $state(new Date().toISOString().split("T")[0]);
 	let sortValue: string = $state("best");
 	let matchValue: string = $state("all");
 

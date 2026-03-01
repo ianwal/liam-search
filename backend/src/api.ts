@@ -22,21 +22,32 @@ app.use(
 	}),
 );
 
+function zodDate() {
+	return z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+		message: "expected YYYY-MM-DD",
+	});
+}
+
 app.get(
 	"/search",
 	zValidator(
 		"query",
 		z.object({
 			query: z.string(),
+			from: zodDate().catch("1970-01-01"),
+			to: zodDate().catch(new Date().toISOString().split("T")[0] as string),
 			sort: z.enum(["best", "latest", "oldest"]).default("best"),
 			match: z.enum(["all", "any"]).default("all"),
 		}),
 	),
 	async (c) => {
-		const { query, sort, match } = c.req.valid("query");
+		const { query, from, to, sort, match } = c.req.valid("query");
+
+		const fromMs = new Date(from).getTime();
+		const toMs = new Date(to).getTime();
 
 		const startTime = performance.now();
-		const results = await search(query, sort, match);
+		const results = await search(query, sort, match, fromMs, toMs);
 		const searchTime = parseFloat((performance.now() - startTime).toFixed(2));
 
 		return c.json({
