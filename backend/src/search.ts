@@ -62,8 +62,8 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 
 	richResults = richResults.filter((result) => result.video.uploadTimestamp >= from && result.video.uploadTimestamp <= to);
 
-	if (sort == "latest") richResults.sort((a, b) => a.video.uploadTimestamp - b.video.uploadTimestamp || b.seconds - a.seconds);
-	if (sort == "oldest") richResults.sort((a, b) => b.video.uploadTimestamp - a.video.uploadTimestamp || a.seconds - b.seconds);
+	if (sort == "latest") richResults.sort((a, b) => b.video.uploadTimestamp - a.video.uploadTimestamp || b.seconds - a.seconds);
+	if (sort == "oldest") richResults.sort((a, b) => a.video.uploadTimestamp - b.video.uploadTimestamp || a.seconds - b.seconds);
 
 	return richResults;
 }
