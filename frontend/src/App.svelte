@@ -3,6 +3,7 @@
 	import { onMount } from "svelte";
 
 	import type { SearchResponse } from "@/types";
+	import Result from "./lib/components/Result.svelte";
 
 	let queryValue: string = $state("");
 	let fromValue: string = $state("");
@@ -14,13 +15,6 @@
 	let searchState: "ready" | "loading" | "error" | "rate_limit" = $state("ready");
 
 	let infoModal: HTMLDialogElement;
-
-	function secondsToTimestamp(seconds: number) {
-		const hours = Math.floor(seconds / 60 / 60);
-		const minutes = Math.floor(seconds / 60) % 60;
-
-		return (hours ? `${hours}:` : "") + `${minutes}:${(seconds % 60).toString().padStart(2, "0")}`;
-	}
 
 	onMount(async () => {
 		const url = new URL(window.location.href);
@@ -111,22 +105,7 @@
 				{#if searchResponse.results.length > 0}
 					<div class="mx-auto grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 						{#each searchResponse?.results as result}
-							{@const videoUrl = `https://www.youtube.com/watch?v=${result.video.id}`}
-							<div class="outline-liam-background flex w-fit flex-col gap-2 rounded p-2.5 outline-1 transition-[outline] duration-150 hover:outline-gray-700">
-								<a href={`${videoUrl}&t=${result.seconds}`} target="_blank">
-									<img src={result.video.thumbnailUrl} alt="" class="aspect-video w-full rounded-sm" />
-								</a>
-								<p>
-									<a href={videoUrl} target="_blank">{result.video.title}</a>
-									<span class="text-gray-500">at</span>
-									<a href={`${videoUrl}&t=${result.seconds}`} target="_blank" class="text-blue-500 hover:text-blue-400">{secondsToTimestamp(result.seconds)}</a>
-								</p>
-								<p class="text-[15px] text-gray-500">
-									"{#if result.previousText}...{result.previousText}{/if}
-									<span class="font-medium text-white">{result.text}</span>
-									{#if result.nextText}{result.nextText}..{/if}"
-								</p>
-							</div>
+							<Result {result} />
 						{/each}
 					</div>
 				{:else}
