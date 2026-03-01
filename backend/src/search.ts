@@ -1,4 +1,5 @@
 import MiniSearch from "minisearch";
+import { singular } from "pluralize";
 
 import type { SearchResult } from "@/types";
 
@@ -7,6 +8,11 @@ import { db } from "./db";
 const index = new MiniSearch({
 	fields: ["text"],
 	storeFields: ["previousId", "nextId", "videoId", "seconds", "text"],
+
+	// https://github.com/lucaong/minisearch/blob/3d239d1c3ae7aef1bf5d8945dd7b5f0709f646f5/src/MiniSearch.ts#L2261
+	tokenize: (string, _fieldName) => string.split(/(?!['"])[\n\r\p{Z}\p{P}]/gu),
+
+	processTerm: (term) => singular(term.toLowerCase().replace(/['"]/gu, "")),
 });
 
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number): Promise<SearchResult[]> {
