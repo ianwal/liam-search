@@ -19,11 +19,11 @@ process.on("SIGINT", function () {
 });
 
 Bun.serve({
-	port: 3000,
+	port: 8059,
 	fetch: app.fetch,
 });
 
-console.log("serving api at http://localhost:3000");
+console.log("serving api at http://localhost:8059");
 
 Job.pushQueue(
 	new Job("download yt-dlp", async () => {
@@ -48,7 +48,7 @@ Job.pushQueue(
 				const videoMetadata = playlistInfo.entries.map((video: any) => ({
 					id: video.id,
 					title: video.title,
-					thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`,
+					thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`,
 					duration: video.duration,
 					uploader: video.uploader,
 					uploaderUrl: video.uploader_url,
