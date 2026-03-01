@@ -117,7 +117,7 @@
 									<img src={result.video.thumbnailUrl} alt="" class="aspect-video w-full rounded-sm" />
 								</a>
 								<p>
-									<a href={videoUrl} target="_blank">Liam VOD - Minecraft Speedrunning Day 20</a>
+									<a href={videoUrl} target="_blank">{result.video.title}</a>
 									<span class="text-gray-500">at</span>
 									<a href={`${videoUrl}&t=${result.seconds}`} target="_blank" class="text-blue-500 hover:text-blue-400">{secondsToTimestamp(result.seconds)}</a>
 								</p>
