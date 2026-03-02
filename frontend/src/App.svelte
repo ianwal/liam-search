@@ -59,7 +59,9 @@
 <main class="mx-auto flex h-screen w-full flex-col gap-5 px-8 pt-10 md:px-16 2xl:px-42">
 	<div class="mx-auto mb-5 flex w-fit flex-col items-center">
 		<a href="/" class="flex items-center justify-center gap-5">
-			<img src="logo.png" alt="Liam logo" class="h-16" />
+			<div class="h-16">
+				<img src="logo_full.png" alt="Liam's logo with a magnifying glass" class="h-19.5" />
+			</div>
 			<h1>Liam Search</h1>
 		</a>
 		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
@@ -159,7 +161,7 @@
 			<div>
 				<h2 class="mb-2">Disclaimer</h2>
 				<p>
-					Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam logo belongs to Liam. Liam Search is directly inspired by <a
+					Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam silhouette logo belongs to Liam. Liam Search is directly inspired by <a
 						href="https://yardsear.ch"
 						target="_blank"
 						class="link">yardsear.ch</a
