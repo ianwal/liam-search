@@ -59,9 +59,7 @@
 <main class="mx-auto flex h-screen w-full flex-col gap-5 px-8 pt-10 md:px-16 2xl:px-42">
 	<div class="mx-auto mb-5 flex w-fit flex-col items-center">
 		<a href="/" class="flex items-center justify-center gap-5">
-			<div class="h-16">
-				<img src="logo_full.png" alt="Liam's logo with a magnifying glass" class="h-19.5" />
-			</div>
+			<img src="logo.png" alt="Liam's logo with a magnifying glass" class="h-16" />
 			<h1>Liam Search</h1>
 		</a>
 		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
