@@ -39,10 +39,9 @@ app.use("*", async (c, next) => {
 	log("API", c.res.status >= 400 ? "ERROR" : "INFO", {
 		request_id: c.get("requestId"),
 		remote_ip: info.remote.address,
-		agent: c.req.header("User-Agent"),
 		method: c.req.method,
 		path: c.req.path,
-		query: new URL(c.req.url).search,
+		query: c.req.query(),
 		status: res.status,
 		message: res.statusText,
 		...(c.get("logData") || {}),
