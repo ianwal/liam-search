@@ -157,20 +157,17 @@
 		</div>
 		<div class="flex flex-col gap-4 overflow-y-auto p-4">
 			<div>
-				<h2 class="mb-2">Disclaimer</h2>
+				<h2 class="mb-2">Disclaimer and Privacy</h2>
+				<p>Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam silhouette logo belongs to Liam.</p>
+				<br />
 				<p>
-					Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam silhouette logo belongs to Liam. Liam Search is directly inspired by <a
-						href="https://yardsear.ch"
-						target="_blank"
-						class="link">yardsear.ch</a
-					>.
+					Also, I keep a log of search queries and IP addresses solely to prevent abuse. I don't sell or share these logs with third parties. By using Liam Search, you consent to this
+					collection.
 				</p>
-			</div>
-			<hr />
-			<div>
-				<h2 class="mb-2">Privacy Statement</h2>
+				<br />
 				<p>
-					I keep a log of search queries and IP addresses solely to prevent abuse. I don't sell or share these logs with third parties. By using Liam Search, you consent to this collection.
+					This site was inspired by <a href="https://yardsear.ch" target="_blank" class="link">yardsear.ch</a>. I also copied this popup from
+					<a href="https://jerkoffs.live/" target="_blank" class="link">jerkoffs.live</a> pretty much one to one.
 				</p>
 			</div>
 			<hr />
@@ -186,7 +183,7 @@
 			</div>
 			<hr />
 			<div>
-				<h2 class="mb-2">How does Liam Search work?</h2>
+				<h2 class="mb-2">How it works</h2>
 				<ol class="flex list-inside list-decimal flex-col gap-2">
 					<li>
 						Metadata and audio is pulled from the <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">Liam VODs playlist</a>
@@ -206,6 +203,10 @@
 					<li>Only VODs after July 2023 as well as some clips are indexed. I plan to index every clip at some point</li>
 					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
 				</ul>
+			</div>
+			<hr />
+			<div class="flex justify-center">
+				<img src="/liamkL.png" alt="poroAgony emote" class="h-6" />
 			</div>
 		</div>
 	</div>
