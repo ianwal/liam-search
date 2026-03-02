@@ -57,17 +57,17 @@
 </svelte:head>
 
 <main class="mx-auto flex h-screen w-full flex-col gap-5 px-8 pt-10 md:px-16 2xl:px-42">
-	<div class="mb-5 flex flex-col items-center">
+	<div class="mx-auto mb-5 flex w-fit flex-col items-center">
 		<a href="/" class="flex items-center justify-center gap-5">
 			<img src="logo.png" alt="Liam logo" class="h-16" />
 			<h1>Liam Search</h1>
 		</a>
-		<p class="text-gray-500">made by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
+		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
 	</div>
 	<form class="mx-auto flex w-full flex-col gap-2">
 		<div class="light-outline flex grow overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!">
 			<!-- svelte-ignore a11y_autofocus -->
-			<input bind:value={queryValue} type="text" name="query" autofocus placeholder="search" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
+			<input bind:value={queryValue} type="text" name="query" autofocus placeholder="Search" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
 			<label class="btn rounded-none! px-4!">
 				<input type="submit" class="hidden" />
 				<Search class="w-5" />
@@ -131,13 +131,15 @@
 	</div>
 
 	<footer class="mt-auto flex flex-col items-center gap-5 py-10 text-gray-500">
-		<span>latest update: full rework! now supports date ranges, sorting, word matching, swear words, and more vods.</span>
+		<span class="w-[450px] text-center">Latest update: Full rework! Now supports date ranges, sorting, word matching, swear words, and more VODs.</span>
 		<div class="flex gap-2">
-			<button onclick={() => infoModal.showModal()} class="link">help / more info</button>
+			<button onclick={() => infoModal.showModal()} class="link">Help / Info</button>
 			<span>•</span>
-			<a href="https://github.com/zaneshaw/liam-search" target="_blank" class="link">source code<sup>🡥</sup></a>
+			<a href="https://github.com/zaneshaw/liam-search" target="_blank" class="link">Source code<sup>🡥</sup></a>
 			<span>•</span>
-			<a href="https://www.twitch.tv/liam" target="_blank" class="link">liam twitch<sup>🡥</sup></a>
+			<a href="https://www.twitch.tv/liam" target="_blank" class="link">Twitch<sup>🡥</sup></a>
+			<span>•</span>
+			<a href="https://www.youtube.com/@LiamKings" target="_blank" class="link">YouTube<sup>🡥</sup></a>
 		</div>
 	</footer>
 </main>
@@ -151,7 +153,7 @@
 >
 	<div class="bg-background text-liam-skin light-outline fixed top-1/2 left-1/2 flex h-[600px] w-[450px] -translate-1/2 flex-col rounded">
 		<div class="border-b border-gray-700 p-4">
-			<h2>help / more info</h2>
+			<h2>Help / Info</h2>
 		</div>
 		<div class="flex flex-col gap-4 overflow-y-auto p-4">
 			<div>
