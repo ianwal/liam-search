@@ -201,7 +201,7 @@
 			<div>
 				<h2 class="mb-2">Notes</h2>
 				<ul class="flex list-inside list-['-_'] flex-col gap-2">
-					<li><span class="line-through">For now, results just show the thumbnail of the video instead of a YouTube embed</span></li>
+					<li>Only VODs after July 2023 as well as some clips are indexed. I plan to index every clip at some point</li>
 					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
 				</ul>
 			</div>
