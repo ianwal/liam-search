@@ -11,6 +11,7 @@ const ytdlp = new YtDlp();
 
 const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
+const playlists = ["https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay", "https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZI0Ijd1xcjcT3Y6ht5NEX9"];
 const uploadDateOverrides: { [id: string]: Date } = {
 	"HGoVx0-0tJ4": new Date("2017-01-01"),
 	"mzGXgJVJPhM": new Date("2018-01-01"),
@@ -48,12 +49,16 @@ Job.pushQueue(
 		return { status: "success" };
 	}),
 	new Job(
-		"fetch playlist info",
+		"fetch video info",
 		async () => {
-			const playlistInfo = (await ytdlp.getInfoAsync("https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay", { cookies: cookiesPath })) as PlaylistInfo;
+			const videosInfo = [];
+			for (const url of playlists) {
+				const playlistInfo = (await ytdlp.getInfoAsync(url, { cookies: cookiesPath })) as PlaylistInfo;
+				videosInfo.push(...playlistInfo.entries);
+			}
 
-			if (playlistInfo.entries.length > 0) {
-				const videoMetadata = playlistInfo.entries.map((video: any) => ({
+			if (videosInfo.length > 0) {
+				const videoMetadata = videosInfo.map((video: any) => ({
 					id: video.id,
 					title: video.title,
 					thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`,
