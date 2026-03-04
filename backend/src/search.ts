@@ -44,9 +44,6 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 }
 
 export const buildIndexJob = new Job("build index", async () => {
-	// todo: better id
-	let id = -1;
-
 	const segments = db
 		.query("select id, transcript from videos where transcript is not null")
 		.all()
@@ -54,12 +51,10 @@ export const buildIndexJob = new Job("build index", async () => {
 			const transcript: any[] = JSON.parse(video.transcript);
 
 			return transcript.map((segment, segmentIndex) => {
-				id++;
-
 				return {
-					id: id,
-					previousId: segmentIndex > 0 ? id - 1 : null,
-					nextId: segmentIndex < transcript.length - 1 ? id + 1 : null,
+					id: `${video.id}/${segmentIndex}`,
+					previousId: segmentIndex > 0 ? `${video.id}/${segmentIndex - 1}` : null,
+					nextId: segmentIndex < transcript.length - 1 ? `${video.id}/${segmentIndex + 1}` : null,
 					videoId: video.id as string,
 					seconds: Math.floor(segment.start / 1000),
 					text: segment.text as string,
