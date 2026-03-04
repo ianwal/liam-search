@@ -11,6 +11,7 @@ import type { SearchResponse } from "@/types";
 
 import { log } from "./log";
 import { search } from "./search";
+import { paginate } from "./utils";
 
 const app = new Hono<{ Variables: { logData: any } }>();
 
@@ -58,10 +59,12 @@ app.get(
 			to: zodDate().catch(new Date().toISOString().split("T")[0] as string),
 			sort: z.enum(["best", "latest", "oldest"]).default("best"),
 			match: z.enum(["all", "any"]).default("all"),
+			page: z.coerce.number().int().positive().optional(),
+			perPage: z.coerce.number().int().positive().default(24),
 		}),
 	),
 	async (c) => {
-		const { query, from, to, sort, match } = c.req.valid("query");
+		const { query, from, to, sort, match, page, perPage } = c.req.valid("query");
 
 		const fromMs = new Date(from).getTime();
 		const toMs = new Date(to).getTime();
@@ -70,15 +73,24 @@ app.get(
 		const results = await search(query, sort, match, fromMs, toMs);
 		const searchMs = parseFloat((performance.now() - startTime).toFixed(2));
 
+		// todo: better logging for pagination
 		c.set("logData", {
 			search_ms: searchMs,
 			results_count: results.length,
 		});
 
-		return c.json({
+		let response: SearchResponse = {
 			ms: searchMs,
-			results,
-		} as SearchResponse);
+			resultCount: results.length,
+			results
+		};
+
+		if (page) {
+			const pageResults = paginate(results, page, perPage);
+			Object.assign(response, pageResults);
+		}
+
+		return c.json(response);
 	},
 );
 

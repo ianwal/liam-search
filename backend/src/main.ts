@@ -5,8 +5,8 @@ import { type PlaylistInfo, type VideoInfo, YtDlp, helpers } from "ytdlp-nodejs"
 import app from "./api";
 import { db } from "./db";
 import { Job } from "./jobs";
-import type { VideoCache, VideoMetadata } from "./types";
 import { buildIndexJob } from "./search";
+import type { VideoCache, VideoMetadata } from "./types";
 
 const ytdlp = new YtDlp();
 

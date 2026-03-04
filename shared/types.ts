@@ -1,5 +1,9 @@
 export type SearchResponse = {
 	ms: number;
+	page?: number;
+	perPage?: number;
+	pageCount?: number;
+	resultCount: number;
 	results: SearchResult[];
 };
 
@@ -9,7 +13,7 @@ export type SearchResult = {
 		title: string;
 		thumbnailUrl: string;
 		uploadTimestamp: number;
-	}
+	};
 	seconds: number;
 	text: string;
 	previousText: string | null;

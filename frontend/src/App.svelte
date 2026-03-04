@@ -1,15 +1,18 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
-	import { onMount } from "svelte";
+	import { ArrowLeft, ArrowLeftToLine, ArrowRight, ArrowRightToLine, Search } from "lucide-svelte";
+	import { onMount, tick } from "svelte";
 
 	import type { SearchResponse } from "@/types";
 	import Result from "./lib/components/Result.svelte";
+
+	let searchForm: HTMLFormElement;
 
 	let queryValue: string = $state("");
 	let fromValue: string = $state("");
 	let toValue: string = $state("");
 	let sortValue: string = $state("best");
 	let matchValue: string = $state("all");
+	let page: number = $state(1);
 
 	let searchResponse: SearchResponse | undefined = $state(undefined);
 	let searchState: "ready" | "loading" | "error" | "rate_limit" = $state("ready");
@@ -24,6 +27,7 @@
 		if (url.searchParams.get("to")) toValue = url.searchParams.get("to")!;
 		if (url.searchParams.get("sort")) sortValue = url.searchParams.get("sort")!;
 		if (url.searchParams.get("match")) matchValue = url.searchParams.get("match")!;
+		if (url.searchParams.get("page")) page = parseInt(url.searchParams.get("page")!);
 
 		if (query) {
 			queryValue = query;
@@ -47,6 +51,11 @@
 			}
 		}
 	});
+
+	async function search() {
+		await tick();
+		searchForm.submit();
+	}
 </script>
 
 <svelte:head>
@@ -64,7 +73,7 @@
 		</a>
 		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
 	</div>
-	<form class="mx-auto flex w-full flex-col gap-2">
+	<form bind:this={searchForm} class="mx-auto flex w-full flex-col gap-2">
 		<div class="light-outline flex grow overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!">
 			<!-- svelte-ignore a11y_autofocus -->
 			<input bind:value={queryValue} type="text" name="query" autofocus placeholder="Search" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
@@ -76,7 +85,8 @@
 		<div class="flex items-center justify-between">
 			<span class="text-gray-500 italic">
 				{#if searchResponse}
-					{searchResponse.results.length} results in {searchResponse.ms} ms
+					{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of {searchResponse.resultCount}
+					results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
 				{/if}
 			</span>
 			<div class="flex gap-2">
@@ -93,6 +103,7 @@
 				</select>
 			</div>
 		</div>
+		<input bind:value={page} type="number" name="page" class="hidden" />
 	</form>
 
 	<!-- <div class="bg-liam-background text-liam-skin w-full rounded p-3 text-center">
@@ -103,10 +114,76 @@
 		{#if searchState == "ready"}
 			{#if searchResponse}
 				{#if searchResponse.results.length > 0}
-					<div class="mx-auto grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-						{#each searchResponse?.results as result}
-							<Result {result} />
-						{/each}
+					{#snippet pageList(res: SearchResponse)}
+						<div class="flex w-max items-center gap-2">
+							<div class="flex gap-1">
+								<button
+									disabled={res.page == 1}
+									onclick={() => {
+										page = 1;
+										search();
+									}}
+									title="first page"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowLeftToLine /></button
+								>
+								<button
+									disabled={res.page == 1}
+									onclick={() => {
+										page--;
+										search();
+									}}
+									title="previous page (page {res.page! - 1})"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowLeft class="size-[22px]" /></button
+								>
+							</div>
+							<div class="flex">
+								{#each Array.from({ length: res.pageCount! }) as _, i}
+									{@const number = i + 1}
+									{@const centre = Math.min(Math.max(2 + 1, res.page!), res.pageCount! - 2)}
+									{#if Math.abs(number - centre) <= 2}
+										<button
+											onclick={() => {
+												page = number;
+												search();
+											}}
+											title="page {number}"
+											class="size-7 cursor-pointer"
+										>
+											<span class={number == res.page ? "text-white" : "text-gray-500"}>{number}</span>
+										</button>
+									{/if}
+								{/each}
+							</div>
+							<div class="flex gap-1">
+								<button
+									disabled={res.page == res.pageCount}
+									onclick={() => {
+										page++;
+										search();
+									}}
+									title="next page (page {res.page! + 1})"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowRight class="size-[22px]" /></button
+								>
+								<button
+									disabled={res.page == res.pageCount}
+									onclick={() => {
+										page = res.pageCount!;
+										search();
+									}}
+									title="last page (page {res.pageCount})"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowRightToLine /></button
+								>
+							</div>
+						</div>
+					{/snippet}
+
+					<div class="flex flex-col items-center gap-5">
+						<div class="mx-auto grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+							{#each searchResponse?.results as result}
+								<Result {result} />
+							{/each}
+						</div>
+						{@render pageList(searchResponse)}
 					</div>
 				{:else}
 					<div class="flex flex-col items-center gap-2">
