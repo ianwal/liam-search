@@ -16,8 +16,40 @@ const index = new MiniSearch({
 	processTerm: (term) => singular(term.toLowerCase().replace(/['"]/gu, "")),
 });
 
+export const buildIndexJob = new Job("build index", async () => {
+	const segments = db
+		.query("select id, transcript from videos where transcript is not null")
+		.all()
+		.flatMap((video: any) => {
+			const transcript: any[] = JSON.parse(video.transcript);
+
+			return transcript.map((segment, segmentIndex) => {
+				return {
+					id: `${video.id}/${segmentIndex}`,
+					previousId: segmentIndex > 0 ? `${video.id}/${segmentIndex - 1}` : null,
+					nextId: segmentIndex < transcript.length - 1 ? `${video.id}/${segmentIndex + 1}` : null,
+					videoId: video.id as string,
+					seconds: Math.floor(segment.start / 1000),
+					text: segment.text as string,
+				};
+			});
+		});
+
+	index.removeAll();
+	index.addAll(segments);
+	queryCache = [];
+
+	return { status: "success" };
+});
+
+let queryCache: { encodedQuery: string; results: SearchResult[] }[] = [];
+
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number): Promise<SearchResult[]> {
 	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
+	const encodedQuery = encodeQuery(arguments);
+	const cached = queryCache.find((query) => query.encodedQuery == encodedQuery);
+
+	if (cached) return cached.results;
 
 	let richResults: SearchResult[] = results.map(({ videoId, seconds, text, previousId, nextId }) => {
 		const video = db.query("select title, thumbnailUrl, uploadTimestamp from videos where id = ?").get(videoId) as { title: string; thumbnailUrl: string; uploadTimestamp: number };
@@ -40,30 +72,19 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 	if (sort == "latest") richResults.sort((a, b) => b.video.uploadTimestamp - a.video.uploadTimestamp || b.seconds - a.seconds);
 	if (sort == "oldest") richResults.sort((a, b) => a.video.uploadTimestamp - b.video.uploadTimestamp || a.seconds - b.seconds);
 
+	cacheQuery(encodedQuery, richResults);
+
 	return richResults;
 }
 
-export const buildIndexJob = new Job("build index", async () => {
-	const segments = db
-		.query("select id, transcript from videos where transcript is not null")
-		.all()
-		.flatMap((video: any) => {
-			const transcript: any[] = JSON.parse(video.transcript);
+function cacheQuery(encodedQuery: string, results: SearchResult[]) {
+	if (queryCache.length >= 25) {
+		queryCache.shift();
+	}
 
-			return transcript.map((segment, segmentIndex) => {
-				return {
-					id: `${video.id}/${segmentIndex}`,
-					previousId: segmentIndex > 0 ? `${video.id}/${segmentIndex - 1}` : null,
-					nextId: segmentIndex < transcript.length - 1 ? `${video.id}/${segmentIndex + 1}` : null,
-					videoId: video.id as string,
-					seconds: Math.floor(segment.start / 1000),
-					text: segment.text as string,
-				};
-			});
-		});
+	queryCache.push({ encodedQuery, results });
+}
 
-	index.removeAll();
-	index.addAll(segments);
-
-	return { status: "success" };
-});
+function encodeQuery(args: IArguments) {
+	return Array.from(args).join("/");
+}
