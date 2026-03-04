@@ -279,6 +279,7 @@
 				<ul class="flex list-inside list-['-_'] flex-col gap-2">
 					<li>Only VODs after July 2023 as well as some clips are indexed. I plan to index every clip at some point</li>
 					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
+					<li>Unfortunately the transcriber hallucinates speech sometimes (especially during parts with no speech like the 10 minute intros)</li>
 				</ul>
 			</div>
 			<hr />
