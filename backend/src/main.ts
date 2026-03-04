@@ -21,6 +21,81 @@ const uploadDateOverrides: { [id: string]: Date } = {
 	"Xj2vHvMmHF0": new Date("2021-01-01"),
 };
 
+const transcribeJob = new Job(
+	"fetch video info",
+	async () => {
+		const videosInfo = [];
+		for (const url of playlists) {
+			const playlistInfo = (await ytdlp.getInfoAsync(url, { cookies: cookiesPath })) as PlaylistInfo;
+			videosInfo.push(...playlistInfo.entries);
+		}
+
+		if (videosInfo.length > 0) {
+			const videoMetadata = videosInfo.map((video: any) => ({
+				id: video.id,
+				title: video.title,
+				thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`,
+				duration: video.duration,
+				uploader: video.uploader,
+				uploaderUrl: video.uploader_url,
+				viewCount: video.view_count,
+			}));
+
+			return { status: "success", data: { videoMetadata } };
+		} else {
+			console.error("playlist fetch error. does it have any videos?");
+			return { status: "failed_queue" };
+		}
+	},
+	(res) => {
+		if (res.status == "success") {
+			Job.pushQueue(
+				new Job("update videos cache", async () => {
+					for (const video of res.data!.videoMetadata as VideoMetadata[]) {
+						const cachedVideo = db.query("select * from videos where id = ?").get(video.id) as VideoCache;
+
+						if (cachedVideo) {
+							if (Date.now() > cachedVideo.cacheTimestamp + 24 * 60 * 60 * 1000) {
+								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+								video.uploadTimestamp = videoInfo.timestamp * 1000;
+
+								db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
+							}
+						} else {
+							const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+							video.uploadTimestamp = videoInfo.timestamp * 1000;
+
+							const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+							query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
+						}
+
+						if (uploadDateOverrides[video.id]) {
+							db.query(`update videos set uploadTimestamp = ? where id = ?`).run(uploadDateOverrides[video.id]!.getTime(), video.id);
+						}
+					}
+
+					return { status: "success" };
+				}),
+				new Job("transcribe new videos", async () => {
+					const newVideos = db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[];
+
+					if (newVideos.length > 0) {
+						for (const video of newVideos) {
+							// todo: add subjobs or something
+							await transcribeVideo(video.id, video.tempAudioPath);
+						}
+
+						return { status: "success" };
+					} else {
+						return { status: "skipped" };
+					}
+				}),
+				buildIndexJob,
+			);
+		}
+	},
+);
+
 process.on("SIGINT", function () {
 	Job.detachRunning();
 	Job.clearQueue();
@@ -34,6 +109,13 @@ process.on("SIGINT", function () {
 });
 
 Job.pushQueue(
+	new Job("register interval", async () => {
+		setInterval(() => {
+			Job.pushQueue(transcribeJob);
+		}, 6 * 60 * 60 * 1000);
+
+		return { status: "success" };
+	}),
 	buildIndexJob,
 	new Job("start server", async () => {
 		Bun.serve({
@@ -58,80 +140,7 @@ Job.pushQueue(
 
 		return { status: "success" };
 	}),
-	new Job(
-		"fetch video info",
-		async () => {
-			const videosInfo = [];
-			for (const url of playlists) {
-				const playlistInfo = (await ytdlp.getInfoAsync(url, { cookies: cookiesPath })) as PlaylistInfo;
-				videosInfo.push(...playlistInfo.entries);
-			}
-
-			if (videosInfo.length > 0) {
-				const videoMetadata = videosInfo.map((video: any) => ({
-					id: video.id,
-					title: video.title,
-					thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`,
-					duration: video.duration,
-					uploader: video.uploader,
-					uploaderUrl: video.uploader_url,
-					viewCount: video.view_count,
-				}));
-
-				return { status: "success", data: { videoMetadata } };
-			} else {
-				console.error("playlist fetch error. does it have any videos?");
-				return { status: "failed_queue" };
-			}
-		},
-		(res) => {
-			if (res.status == "success") {
-				Job.pushQueue(
-					new Job("update videos cache", async () => {
-						for (const video of res.data!.videoMetadata as VideoMetadata[]) {
-							const cachedVideo = db.query("select * from videos where id = ?").get(video.id) as VideoCache;
-
-							if (cachedVideo) {
-								if (Date.now() > cachedVideo.cacheTimestamp + 24 * 60 * 60 * 1000) {
-									const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
-									video.uploadTimestamp = videoInfo.timestamp * 1000;
-
-									db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
-								}
-							} else {
-								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
-								video.uploadTimestamp = videoInfo.timestamp * 1000;
-
-								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-								query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
-							}
-
-							if (uploadDateOverrides[video.id]) {
-								db.query(`update videos set uploadTimestamp = ? where id = ?`).run(uploadDateOverrides[video.id]!.getTime(), video.id);
-							}
-						}
-
-						return { status: "success" };
-					}),
-					new Job("transcribe new videos", async () => {
-						const newVideos = db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[];
-
-						if (newVideos.length > 0) {
-							for (const video of newVideos) {
-								// todo: add subjobs or something
-								await transcribeVideo(video.id, video.tempAudioPath);
-							}
-
-							return { status: "success" };
-						} else {
-							return { status: "skipped" };
-						}
-					}),
-					buildIndexJob,
-				);
-			}
-		},
-	),
+	transcribeJob,
 );
 
 // kinda scuffed and doesn't really use the job system correctly
