@@ -5,7 +5,20 @@ import sys
 def main():
 	print("running transcriber")
 
-	model = whisperx.load_model("large-v3", "cuda", compute_type="float16", language="en", asr_options={"beam_size": 5, "initial_prompt": "Hello World."})
+	model = whisperx.load_model(
+		"large-v3",
+		"cuda",
+		compute_type="float16",
+		language="en",
+		asr_options={
+			"log_prob_threshold": -0.5,
+			"no_speech_threshold": 0.8
+		},
+		vad_options={
+			"vad_onset": 0.7,
+			"vad_offset": 0.5
+		}
+	)
 	print("loaded model")
 
 	audio = whisperx.load_audio(sys.argv[1])
