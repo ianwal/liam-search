@@ -81,13 +81,21 @@ export class Job {
 			job.log(logLevel, "run_finish", { data: { status: res.status, duration_ms: parseFloat((performance.now() - job.start).toFixed(2)) }, consoleOverride: consoleLog });
 
 			if (clearQueue) {
-				Job.queue.splice(0, Job.queue.length);
+				Job.clearQueue();
 			} else {
 				Job.queue.shift();
 			}
 		}
 
 		Job.queueRunning = false;
+	}
+
+	static clearQueue() {
+		Job.queue.splice(0, Job.queue.length);
+	}
+
+	static detachRunning() {
+		Job.runningJob = undefined;
 	}
 
 	log(level: LogLevel, event: string, optional?: { data?: { [key: string]: any }; consoleOverride?: string }) {

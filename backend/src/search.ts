@@ -4,6 +4,7 @@ import { singular } from "pluralize";
 import type { SearchResult } from "@/types";
 
 import { db } from "./db";
+import { Job } from "./jobs";
 
 const index = new MiniSearch({
 	fields: ["text"],
@@ -16,32 +17,6 @@ const index = new MiniSearch({
 });
 
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number): Promise<SearchResult[]> {
-	// todo: build the index when db changes instead of every search
-	// todo: better id
-	let id = -1;
-	const segments = db
-		.query("select id, transcript from videos where transcript is not null")
-		.all()
-		.flatMap((video: any, videoIndex) => {
-			const transcript: any[] = JSON.parse(video.transcript);
-
-			return transcript.map((segment, segmentIndex) => {
-				id++;
-
-				return {
-					id: id,
-					previousId: segmentIndex > 0 ? id - 1 : null,
-					nextId: segmentIndex < transcript.length - 1 ? id + 1 : null,
-					videoId: video.id as string,
-					seconds: Math.floor(segment.start / 1000),
-					text: segment.text as string,
-				};
-			});
-		});
-
-	index.removeAll();
-	index.addAll(segments);
-
 	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
 
 	let richResults: SearchResult[] = results.map(({ videoId, seconds, text, previousId, nextId }) => {
@@ -67,3 +42,33 @@ export async function search(query: string, sort: "best" | "latest" | "oldest", 
 
 	return richResults;
 }
+
+export const buildIndexJob = new Job("build index", async () => {
+	// todo: better id
+	let id = -1;
+
+	const segments = db
+		.query("select id, transcript from videos where transcript is not null")
+		.all()
+		.flatMap((video: any) => {
+			const transcript: any[] = JSON.parse(video.transcript);
+
+			return transcript.map((segment, segmentIndex) => {
+				id++;
+
+				return {
+					id: id,
+					previousId: segmentIndex > 0 ? id - 1 : null,
+					nextId: segmentIndex < transcript.length - 1 ? id + 1 : null,
+					videoId: video.id as string,
+					seconds: Math.floor(segment.start / 1000),
+					text: segment.text as string,
+				};
+			});
+		});
+
+	index.removeAll();
+	index.addAll(segments);
+
+	return { status: "success" };
+});

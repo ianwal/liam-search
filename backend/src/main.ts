@@ -6,6 +6,7 @@ import app from "./api";
 import { db } from "./db";
 import { Job } from "./jobs";
 import type { VideoCache, VideoMetadata } from "./types";
+import { buildIndexJob } from "./search";
 
 const ytdlp = new YtDlp();
 
@@ -21,20 +22,29 @@ const uploadDateOverrides: { [id: string]: Date } = {
 };
 
 process.on("SIGINT", function () {
-	console.log("closing database...");
-	db.close(false);
+	Job.detachRunning();
+	Job.clearQueue();
 
-	process.exit();
+	new Job("exit process", () => {
+		console.log("closing database...");
+		db.close(false);
+
+		process.exit();
+	}).run();
 });
-
-Bun.serve({
-	port: 8059,
-	fetch: app.fetch,
-});
-
-console.log("serving api at http://localhost:8059");
 
 Job.pushQueue(
+	buildIndexJob,
+	new Job("start server", async () => {
+		Bun.serve({
+			port: 8059,
+			fetch: app.fetch,
+		});
+
+		console.log("serving api at http://localhost:8059");
+
+		return { status: "success" };
+	}),
 	new Job("download yt-dlp", async () => {
 		await helpers.downloadYtDlp();
 
@@ -117,6 +127,7 @@ Job.pushQueue(
 							return { status: "skipped" };
 						}
 					}),
+					buildIndexJob,
 				);
 			}
 		},
@@ -150,8 +161,9 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 					const proc = Bun.spawn({
 						cmd: ["uv", "run", "main.py", tempAudioPath, outPath],
 						cwd: path.resolve(__dirname, "./transcriber"),
-						stdout: "ignore",
-						stderr: "ignore",
+						stdout: "pipe",
+						// stdout: "ignore",
+						// stderr: "ignore",
 					});
 
 					await proc.exited;
