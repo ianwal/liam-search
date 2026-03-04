@@ -4,29 +4,38 @@ export type JobStatus = "success" | "failed" | "failed_queue" | "skipped";
 
 export type JobResult = { status: JobStatus; data?: any };
 
+// todo: rewrite entire job system
 export class Job {
 	static readonly queue: Job[] = [];
 	private static queueRunning: boolean = false;
 
 	static runningJob?: Job;
 
-	readonly id: string;
-	readonly start: number;
+	private _id?: string;
+	private _start?: number;
 	name: string;
 	callback: () => Promise<JobResult>;
 	onFinish?: (result: JobResult) => void;
 
 	constructor(name: string, callback: () => Promise<JobResult>, onFinish?: (result: JobResult) => void) {
-		this.id = Bun.randomUUIDv7();
-		this.start = performance.now();
 		this.name = name;
 		this.callback = callback;
 		this.onFinish = onFinish;
 	}
 
+	public get id() {
+		return this._id;
+	}
+
+	public get start() {
+		return this._start;
+	}
+
 	async run(): Promise<JobResult> {
 		if (Job.runningJob == undefined) {
 			Job.runningJob = this;
+			this._id = Bun.randomUUIDv7();
+			this._start = performance.now();
 			this.log("INFO", "run_start", { consoleOverride: `running '${this.name}'` });
 
 			let res: JobResult;
@@ -78,7 +87,10 @@ export class Job {
 				consoleLog = "job finished";
 			}
 
-			job.log(logLevel, "run_finish", { data: { status: res.status, duration_ms: parseFloat((performance.now() - job.start).toFixed(2)) }, consoleOverride: consoleLog });
+			job.log(logLevel, "run_finish", { data: { status: res.status, duration_ms: parseFloat((performance.now() - job._start!).toFixed(2)) }, consoleOverride: consoleLog });
+
+			job._id = undefined;
+			job._start = undefined;
 
 			if (clearQueue) {
 				Job.clearQueue();
@@ -103,7 +115,7 @@ export class Job {
 			"JOB",
 			level,
 			{
-				job_id: this.id,
+				job_id: this._id,
 				job_name: this.name,
 				event,
 				...optional?.data,
