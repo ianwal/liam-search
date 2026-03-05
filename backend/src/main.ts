@@ -5,6 +5,7 @@ import { type PlaylistInfo, type VideoInfo, YtDlp, helpers } from "ytdlp-nodejs"
 import app from "./api";
 import { db } from "./db";
 import { Job } from "./jobs";
+import { log } from "./log";
 import { buildIndexJob } from "./search";
 import type { VideoCache, VideoMetadata } from "./types";
 
@@ -52,25 +53,29 @@ const transcribeJob = new Job(
 			Job.pushQueue(
 				new Job("update videos cache", async () => {
 					for (const video of res.data!.videoMetadata as VideoMetadata[]) {
-						const cachedVideo = db.query("select * from videos where id = ?").get(video.id) as VideoCache;
+						try {
+							const cachedVideo = db.query("select * from videos where id = ?").get(video.id) as VideoCache;
 
-						if (cachedVideo) {
-							if (Date.now() > cachedVideo.cacheTimestamp + 24 * 60 * 60 * 1000) {
+							if (cachedVideo) {
+								if (Date.now() > cachedVideo.cacheTimestamp + 14 * 24 * 60 * 60 * 1000) {
+									const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+									video.uploadTimestamp = videoInfo.timestamp * 1000;
+
+									db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
+								}
+							} else {
 								const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
 								video.uploadTimestamp = videoInfo.timestamp * 1000;
 
-								db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
+								const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+								query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
 							}
-						} else {
-							const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
-							video.uploadTimestamp = videoInfo.timestamp * 1000;
 
-							const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-							query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
-						}
-
-						if (uploadDateOverrides[video.id]) {
-							db.query(`update videos set uploadTimestamp = ? where id = ?`).run(uploadDateOverrides[video.id]!.getTime(), video.id);
+							if (uploadDateOverrides[video.id]) {
+								db.query(`update videos set uploadTimestamp = ? where id = ?`).run(uploadDateOverrides[video.id]!.getTime(), video.id);
+							}
+						} catch (err) {
+							log("INFO", "ERROR", { message: `failed to get video info (${video.id})! skipping...` });
 						}
 					}
 
@@ -89,8 +94,7 @@ const transcribeJob = new Job(
 					} else {
 						return { status: "skipped" };
 					}
-				}),
-				buildIndexJob,
+				})
 			);
 		}
 	},
@@ -110,9 +114,12 @@ process.on("SIGINT", function () {
 
 Job.pushQueue(
 	new Job("register interval", async () => {
-		setInterval(() => {
-			Job.pushQueue(transcribeJob);
-		}, 6 * 60 * 60 * 1000);
+		setInterval(
+			() => {
+				Job.pushQueue(transcribeJob);
+			},
+			6 * 60 * 60 * 1000,
+		);
 
 		return { status: "success" };
 	}),
@@ -148,10 +155,22 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 	if (tempAudioPath == null || !(await Bun.file(tempAudioPath).exists())) {
 		Job.pushQueue(
 			new Job(`download audio (${videoId})`, async () => {
-				const res = await ytdlp.downloadAudio(videoId, "mp3", {
+				const options = {
+					extractAudio: true,
+					audioFormat: "best",
 					output: path.resolve(__dirname, `../temp/${videoId}.%(ext)s`),
-					cookies: cookiesPath,
-				});
+				};
+
+				let res;
+				try {
+					res = await ytdlp.downloadAsync(videoId, {
+						...options,
+						cookies: cookiesPath,
+					});
+				} catch (err) {
+					log("INFO", "ERROR", { message: `failed to download audio (${videoId})! trying again without cookies...` });
+					res = await ytdlp.downloadAsync(videoId, options);
+				}
 
 				tempAudioPath = res.filePaths[0]!;
 				db.query(`update videos set tempAudioPath = ? where id = ?`).run(tempAudioPath, videoId);
@@ -191,4 +210,6 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 			});
 		}),
 	);
+
+	Job.pushQueue(buildIndexJob);
 }
