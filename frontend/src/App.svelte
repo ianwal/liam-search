@@ -263,10 +263,10 @@
 				<h2 class="mb-2">How it works</h2>
 				<ol class="flex list-inside list-decimal flex-col gap-2">
 					<li>
-						Metadata and audio is pulled from the <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">Liam VODs playlist</a>
-						and
-						<a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay" target="_blank" class="link">ACIDMONEY's clip compilations</a> with
-						<a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="link">yt-dlp</a> every 6 hours
+						Metadata and audio is pulled from <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">my playlist</a>,
+						<a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvgOPOBWdh2-xBxkK5sX90CK" target="_blank" class="link">Liam Unofficial VODs' playlist (minus my uploads)</a>
+						and <a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay" target="_blank" class="link">ACIDMONEY's clip compilations</a>
+						with <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="link">yt-dlp</a> every 6 hours
 					</li>
 					<li>Audio is transcribed with <a href="https://github.com/m-bain/whisperX" target="_blank" class="link">whisperX</a> (large-v3 model)</li>
 					<li>The transcription is added to a <a href="https://github.com/lucaong/minisearch" target="_blank" class="link">MiniSearch</a> index</li>

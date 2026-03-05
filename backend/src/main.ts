@@ -13,7 +13,11 @@ const ytdlp = new YtDlp();
 
 const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
-const playlists = ["https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay", "https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZI0Ijd1xcjcT3Y6ht5NEX9"];
+const playlists = [
+	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_YPhchO2f48lssHKENSMAYy",
+	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZYPbJhACQKEiyb43DXunBy",
+	"https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay",
+];
 const uploadDateOverrides: { [id: string]: Date } = {
 	"HGoVx0-0tJ4": new Date("2017-01-01"),
 	"mzGXgJVJPhM": new Date("2018-01-01"),
