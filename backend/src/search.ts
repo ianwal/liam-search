@@ -45,20 +45,22 @@ export const buildIndexJob = new Job("build index", async () => {
 let queryCache: { encodedQuery: string; results: SearchResult[] }[] = [];
 
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number): Promise<SearchResult[]> {
-	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
-	const encodedQuery = encodeQuery(arguments);
+	const encodedQuery = Array.from(arguments).join("/");
 	const cached = queryCache.find((query) => query.encodedQuery == encodedQuery);
 
 	if (cached) return cached.results;
 
+	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
+	const videos = db.query("select id, title, thumbnailUrl, uploadTimestamp from videos").all() as { id: string; title: string; thumbnailUrl: string; uploadTimestamp: number }[];
+
 	let richResults: SearchResult[] = results.map(({ videoId, seconds, text, previousId, nextId }) => {
-		const video = db.query("select title, thumbnailUrl, uploadTimestamp from videos where id = ?").get(videoId) as { title: string; thumbnailUrl: string; uploadTimestamp: number };
+		const video = videos.find((v) => v.id == videoId);
 		return {
 			video: {
 				id: videoId,
-				title: video.title,
-				thumbnailUrl: video.thumbnailUrl,
-				uploadTimestamp: video.uploadTimestamp,
+				title: video!.title,
+				thumbnailUrl: video!.thumbnailUrl,
+				uploadTimestamp: video!.uploadTimestamp,
 			},
 			seconds,
 			text,
@@ -83,8 +85,4 @@ function cacheQuery(encodedQuery: string, results: SearchResult[]) {
 	}
 
 	queryCache.push({ encodedQuery, results });
-}
-
-function encodeQuery(args: IArguments) {
-	return Array.from(args).join("/");
 }
