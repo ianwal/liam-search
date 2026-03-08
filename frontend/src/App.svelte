@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeft, ArrowLeftToLine, ArrowRight, ArrowRightToLine, Search } from "lucide-svelte";
+	import { ArrowLeft, ArrowLeftToLine, ArrowRight, ArrowRightToLine, FunnelIcon, Search } from "lucide-svelte";
 	import { onMount, tick } from "svelte";
 
 	import type { SearchResponse } from "@/types";
@@ -29,6 +29,7 @@
 	let searchResponse: SearchResponse | undefined = $state(undefined);
 	let searchState: "ready" | "loading" | "error" | "rate_limit" = $state("ready");
 
+	let filterSortModal: HTMLDialogElement;
 	let infoModal: HTMLDialogElement;
 
 	onMount(async () => {
@@ -85,36 +86,58 @@
 		</a>
 		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
 	</div>
-	<form bind:this={searchForm} class="mx-auto flex w-full flex-col gap-2">
-		<div class="light-outline flex grow overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!">
-			<!-- svelte-ignore a11y_autofocus -->
-			<input bind:value={queryValue} type="text" name="query" autofocus placeholder="Search" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
-			<label class="btn rounded-none! px-4!">
-				<input type="submit" class="hidden" />
-				<Search class="w-5" />
-			</label>
-		</div>
-		<div class="flex items-center justify-between">
-			<span class="text-gray-500 italic">
-				{#if searchResponse}
+	<form bind:this={searchForm}>
+		<div class="flex flex-col gap-2">
+			<div class="mx-auto flex w-full items-center gap-2">
+				<div class="light-outline flex grow overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!">
+					<!-- svelte-ignore a11y_autofocus -->
+					<input bind:value={queryValue} type="text" name="query" autofocus placeholder="Search" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
+					<label class="btn rounded-none! px-4!">
+						<input type="submit" class="hidden" />
+						<Search class="w-5" />
+					</label>
+				</div>
+				<button onclick={() => filterSortModal.showModal()} type="button" class="flex size-8 cursor-pointer items-center justify-center">
+					<FunnelIcon class="stroke-gray-500" />
+				</button>
+			</div>
+			{#if searchResponse}
+				<span class="w-max text-gray-500 italic">
 					{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of {searchResponse.resultCount}
 					results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
-				{/if}
-			</span>
-			<div class="flex gap-2">
-				<input bind:value={fromValue} type="date" name="from" class="btn" />
-				<input bind:value={toValue} type="date" name="to" class="btn" />
-				<select bind:value={sortValue} name="sort" class="btn">
-					<option value="best">sort by best</option>
-					<option value="latest">sort by latest</option>
-					<option value="oldest">sort by oldest</option>
-				</select>
-				<select bind:value={matchValue} name="match" class="btn">
-					<option value="all">match all words</option>
-					<option value="any">match any word</option>
-				</select>
-			</div>
+				</span>
+			{/if}
 		</div>
+
+		<dialog
+			bind:this={filterSortModal}
+			onmousedown={(e) => {
+				if (e.target == filterSortModal) filterSortModal.close();
+			}}
+			class="backdrop:bg-black/50"
+		>
+			<div class="bg-background light-outline fixed top-[120px] left-1/2 flex h-max w-[450px] -translate-x-1/2 flex-col rounded">
+				<div class="border-b border-gray-700 p-4">
+					<h2>Filter and Sort</h2>
+				</div>
+				<div class="flex flex-col gap-4 overflow-y-auto p-4">
+					<div class="flex items-center gap-2">
+						<input bind:value={fromValue} type="date" name="from" class="btn grow" />
+						<span class="text-liam-skin">&mdash;</span>
+						<input bind:value={toValue} type="date" name="to" class="btn grow" />
+					</div>
+					<select bind:value={sortValue} name="sort" class="btn">
+						<option value="best">sort by best</option>
+						<option value="latest">sort by latest</option>
+						<option value="oldest">sort by oldest</option>
+					</select>
+					<select bind:value={matchValue} name="match" class="btn">
+						<option value="all">match all words</option>
+						<option value="any">match any word</option>
+					</select>
+				</div>
+			</div>
+		</dialog>
 		<input bind:value={page} type="number" name="page" class="hidden" />
 	</form>
 
