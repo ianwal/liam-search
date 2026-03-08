@@ -5,6 +5,18 @@
 	import type { SearchResponse } from "@/types";
 	import Result from "./lib/components/Result.svelte";
 
+	const exampleLog = {
+		timestamp: "2026-03-08T04:31:45.273Z",
+		level: "INFO",
+		request_id: "522424d7-1be8-4e27-ac31-c33661ca06d6",
+		method: "GET",
+		path: "/search",
+		query: "[REDACTED]",
+		status: 200,
+		search_ms: 175.87,
+		results_count: 73236,
+	};
+
 	let searchForm: HTMLFormElement;
 
 	let queryValue: string = $state("");
@@ -238,8 +250,9 @@
 				<p>Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam silhouette logo belongs to Liam.</p>
 				<br />
 				<p>
-					Also, I keep a log of search queries and IP addresses solely to prevent abuse. I don't sell or share these logs with third parties. By using Liam Search, you consent to this
-					collection.
+					I DO NOT keep a log of your search queries. I DO keep a log of when searches occur with the query redacted. Your IP address is NOT associated with these logs. I don't sell or share
+					these logs with third parties. By using Liam Search, you consent to this collection.
+					<span title={JSON.stringify(exampleLog, null, "\t")} class="cursor-help underline decoration-dotted">Example log entry</span>
 				</p>
 				<br />
 				<p>

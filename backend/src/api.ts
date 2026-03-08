@@ -35,14 +35,12 @@ app.use("*", async (c, next) => {
 	await next();
 
 	const res = c.res.clone() as Response;
-	const info = getConnInfo(c);
 
 	log("API", c.res.status >= 400 ? "ERROR" : "INFO", {
 		request_id: c.get("requestId"),
-		remote_ip: info.remote.address,
 		method: c.req.method,
 		path: c.req.path,
-		query: c.req.query(),
+		query: c.req.path == "/search" ? "[REDACTED]" : c.req.query(),
 		status: res.status,
 		message: res.statusText,
 		...(c.get("logData") || {}),
@@ -82,7 +80,7 @@ app.get(
 		let response: SearchResponse = {
 			ms: searchMs,
 			resultCount: results.length,
-			results
+			results,
 		};
 
 		if (page) {
