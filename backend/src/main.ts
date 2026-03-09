@@ -39,7 +39,7 @@ const transcribeJob = new Job(
 			const videoMetadata = videosInfo.map((video: any) => ({
 				id: video.id,
 				title: video.title,
-				thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`,
+				thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`,
 				duration: video.duration,
 				uploader: video.uploader,
 				uploaderUrl: video.uploader_url,

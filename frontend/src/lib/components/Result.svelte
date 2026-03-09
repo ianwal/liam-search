@@ -15,7 +15,7 @@
 	}
 </script>
 
-<div class="outline-liam-background flex w-fit flex-col gap-2 rounded p-2.5 outline-1 transition-[outline] duration-150 hover:outline-gray-700">
+<div class="outline-liam-background flex w-full flex-col gap-2 rounded p-2.5 outline-1 transition-[outline] duration-150 hover:outline-gray-700 break-all">
 	<div class="relative flex items-center justify-center overflow-hidden rounded-sm">
 		{#if showEmbed}
 			<iframe
@@ -28,7 +28,7 @@
 				class="absolute top-0 left-0 z-10 size-full"
 			></iframe>
 		{/if}
-		<button class:invisible={showEmbed} onclick={() => (showEmbed = true)} class="relative cursor-pointer">
+		<button class:invisible={showEmbed} onclick={() => (showEmbed = true)} class="relative w-full cursor-pointer">
 			<img src={result.video.thumbnailUrl} alt="" class="aspect-video w-full" />
 			<svg viewBox="0 0 68 48" class="absolute top-1/2 left-1/2 size-1/4 -translate-1/2 fill-[#ff0033]">
 				<path
