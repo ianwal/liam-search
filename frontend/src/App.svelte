@@ -67,7 +67,22 @@
 
 	async function search() {
 		await tick();
-		searchForm.submit();
+
+		const formData = new FormData(searchForm);
+
+		if (formData.get("query")) {
+			const searchParams = new URLSearchParams();
+
+			for (const [key, value] of formData.entries()) {
+				if (value != "") {
+					searchParams.append(key, value.toString());
+				}
+			}
+
+			window.location.href = `${searchForm.action}?${searchParams.toString()}`;
+		} else {
+			window.location.href = searchForm.action;
+		}
 	}
 </script>
 
@@ -86,7 +101,14 @@
 		</a>
 		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
 	</div>
-	<form bind:this={searchForm}>
+	<form
+		bind:this={searchForm}
+		action="/"
+		onsubmit={(e) => {
+			e.preventDefault();
+			search();
+		}}
+	>
 		<div class="flex flex-col gap-2">
 			<div class="mx-auto flex w-full items-center gap-2">
 				<div class="light-outline flex grow overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!">
