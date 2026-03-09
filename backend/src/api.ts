@@ -52,6 +52,7 @@ app.get(
 		"query",
 		z.object({
 			query: z.string(),
+			id: z.string().optional(),
 			from: zodDate().catch("1970-01-01"),
 			to: zodDate().catch(new Date().toISOString().split("T")[0] as string),
 			sort: z.enum(["best", "latest", "oldest"]).default("best"),
@@ -61,13 +62,13 @@ app.get(
 		}),
 	),
 	async (c) => {
-		const { query, from, to, sort, match, page, perPage } = c.req.valid("query");
+		const { query, id, from, to, sort, match, page, perPage } = c.req.valid("query");
 
 		const fromMs = new Date(from).getTime();
 		const toMs = new Date(to).getTime();
 
 		const startTime = performance.now();
-		const results = await search(query, sort, match, fromMs, toMs);
+		const results = await search(query, sort, match, fromMs, toMs, id);
 		const searchMs = parseFloat((performance.now() - startTime).toFixed(2));
 
 		// todo: better logging for pagination

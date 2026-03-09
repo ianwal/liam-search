@@ -15,7 +15,7 @@
 	}
 </script>
 
-<div class="outline-liam-background flex w-full flex-col gap-2 rounded p-2.5 outline-1 transition-[outline] duration-150 hover:outline-gray-700 break-all">
+<div class="outline-liam-background flex w-full flex-col gap-2 rounded p-2.5 wrap-break-word outline-1 transition-[outline] duration-150 hover:outline-gray-700">
 	<div class="relative flex items-center justify-center overflow-hidden rounded-sm">
 		{#if showEmbed}
 			<iframe

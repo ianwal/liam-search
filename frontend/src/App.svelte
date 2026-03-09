@@ -20,6 +20,7 @@
 	let searchForm: HTMLFormElement;
 
 	let queryValue: string = $state("");
+	let videoIdValue: string = $state("");
 	let fromValue: string = $state("");
 	let toValue: string = $state("");
 	let sortValue: string = $state("best");
@@ -36,6 +37,7 @@
 		const url = new URL(window.location.href);
 		const query = url.searchParams.get("query");
 
+		if (url.searchParams.get("id")) videoIdValue = url.searchParams.get("id")!;
 		if (url.searchParams.get("from")) fromValue = url.searchParams.get("from")!;
 		if (url.searchParams.get("to")) toValue = url.searchParams.get("to")!;
 		if (url.searchParams.get("sort")) sortValue = url.searchParams.get("sort")!;
@@ -143,6 +145,7 @@
 					<h2>Filter and Sort</h2>
 				</div>
 				<div class="flex flex-col gap-4 overflow-y-auto p-4">
+					<input bind:value={videoIdValue} type="text" name="id" placeholder="Video ID (GzOs8nQt27g)" class="btn cursor-text! outline-1!" />
 					<div class="flex items-center gap-2">
 						<input bind:value={fromValue} type="date" name="from" class="btn grow" />
 						<span class="text-liam-skin">&mdash;</span>
@@ -154,8 +157,8 @@
 						<option value="oldest">sort by oldest</option>
 					</select>
 					<select bind:value={matchValue} name="match" class="btn">
-						<option value="all">match all words</option>
-						<option value="any">match any word</option>
+						<option value="all">match all words in query</option>
+						<option value="any">match any word in query</option>
 					</select>
 				</div>
 			</div>
