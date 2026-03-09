@@ -6,7 +6,7 @@ import type { SearchResult } from "@/types";
 import { db } from "./db";
 import { Job } from "./jobs";
 
-const index = new MiniSearch({
+export const index = new MiniSearch({
 	fields: ["text"],
 	storeFields: ["previousId", "nextId", "videoId", "seconds", "text"],
 
@@ -16,33 +16,7 @@ const index = new MiniSearch({
 	processTerm: (term) => singular(term.toLowerCase().replace(/['"]/gu, "")),
 });
 
-export const buildIndexJob = new Job("build index", async () => {
-	const segments = db
-		.query("select id, transcript from videos where transcript is not null")
-		.all()
-		.flatMap((video: any) => {
-			const transcript: any[] = JSON.parse(video.transcript);
-
-			return transcript.map((segment, segmentIndex) => {
-				return {
-					id: `${video.id}/${segmentIndex}`,
-					previousId: segmentIndex > 0 ? `${video.id}/${segmentIndex - 1}` : null,
-					nextId: segmentIndex < transcript.length - 1 ? `${video.id}/${segmentIndex + 1}` : null,
-					videoId: video.id as string,
-					seconds: Math.floor(segment.start / 1000),
-					text: segment.text as string,
-				};
-			});
-		});
-
-	index.removeAll();
-	index.addAll(segments);
-	queryCache = [];
-
-	return { status: "success" };
-});
-
-let queryCache: { encodedQuery: string; results: SearchResult[] }[] = [];
+export let queryCache: { encodedQuery: string; results: SearchResult[] }[] = [];
 
 export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number): Promise<SearchResult[]> {
 	const encodedQuery = Array.from(arguments).join("/");

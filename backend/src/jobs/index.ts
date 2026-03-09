@@ -1,4 +1,4 @@
-import { type LogLevel, log } from "./log";
+import { type LogLevel, log } from "../log";
 
 export type JobStatus = "success" | "failed" | "failed_queue" | "skipped";
 

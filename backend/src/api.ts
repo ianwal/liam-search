@@ -2,7 +2,6 @@ import { compress } from "@hono/bun-compress";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
-import { getConnInfo } from "hono/bun";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { z } from "zod";
