@@ -127,8 +127,12 @@
 			</div>
 			{#if searchResponse}
 				<span class="w-max text-gray-500 italic">
-					{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of {searchResponse.resultCount}
-					results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
+					{#if searchResponse.resultCount > 0}
+						{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of {searchResponse.resultCount}
+						results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
+					{:else}
+						0 results in {searchResponse.ms} ms
+					{/if}
 				</span>
 			{/if}
 		</div>
