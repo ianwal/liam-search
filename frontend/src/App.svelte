@@ -347,7 +347,7 @@
 						with <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="link">yt-dlp</a> every 6 hours
 					</li>
 					<li>Audio is transcribed with <a href="https://github.com/m-bain/whisperX" target="_blank" class="link">whisperX</a> (large-v3 model)</li>
-					<li>The transcription is added to a <a href="https://github.com/lucaong/minisearch" target="_blank" class="link">MiniSearch</a> index</li>
+					<li>The transcription is added to a <a href="https://github.com/meilisearch/meilisearch" target="_blank" class="link">Meilisearch</a> index</li>
 					<li>You query that index with whatever paramaters you set, and the results are displayed here</li>
 				</ol>
 			</div>
