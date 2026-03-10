@@ -144,8 +144,6 @@ async function transcribeVideo(videoId: string, tempAudioPath: string | null) {
 					const proc = Bun.spawn({
 						cmd: ["uv", "run", "main.py", tempAudioPath, outPath],
 						cwd: path.resolve(__dirname, "../transcriber"),
-						stdout: "ignore",
-						stderr: "ignore",
 					});
 
 					await proc.exited;
