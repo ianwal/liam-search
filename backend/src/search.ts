@@ -5,7 +5,7 @@ import type { SearchResponse, SearchResult } from "@/types";
 import { db } from "./db";
 
 export const msClient = new MeiliSearch({
-	host: "http://callisto:7700/",
+	host: Bun.env.VITE_MEILISEARCH_HOST!,
 	apiKey: "RKMpVWiC7sW3cDhdCCbp",
 });
 

@@ -51,7 +51,7 @@
 			searchState = "loading";
 
 			try {
-				const res = await fetch(`http://localhost:8059/search${url.search}`);
+				const res = await fetch(`${import.meta.env.VITE_API_URL}/search${url.search}`);
 
 				if (res.ok) {
 					searchResponse = (await res.json()) as SearchResponse;

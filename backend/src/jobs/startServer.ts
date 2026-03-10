@@ -3,7 +3,7 @@ import app from "../api";
 
 export default new Job("start server", async () => {
 	Bun.serve({
-		port: 8059,
+		port: parseInt(Bun.env.VITE_PORT!),
 		fetch: app.fetch,
 	});
 
