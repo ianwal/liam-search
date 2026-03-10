@@ -76,11 +76,12 @@ app.get(
 			perPage,
 		});
 
-		// todo: better logging for pagination
-		// c.set("logData", {
-		// 	search_ms: searchMs,
-		// 	results_count: results.length,
-		// });
+		c.set("logData", {
+			search_ms: response.ms,
+			result_count: response.resultCount,
+			page_count: response.pageCount,
+			per_page: perPage,
+		});
 
 		return c.json(response);
 	},
