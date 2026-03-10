@@ -6,8 +6,6 @@ import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { z } from "zod";
 
-import type { SearchResponse } from "@/types";
-
 import { log } from "./log";
 import { search } from "./search";
 

@@ -186,10 +186,6 @@
 		<input bind:value={page} type="number" name="page" class="hidden" />
 	</form>
 
-	<!-- <div class="bg-liam-background text-liam-skin w-full rounded p-3 text-center">
-		<span>processing video (Liam VOD - Minecraft Speedrunning Day 20)...</span>
-	</div> -->
-
 	<div class="flex justify-center">
 		{#if searchState == "ready"}
 			{#if searchResponse}

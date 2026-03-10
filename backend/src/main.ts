@@ -1,15 +1,14 @@
-import { exists } from "fs/promises";
 import path from "path";
-import { YtDlp, helpers } from "ytdlp-nodejs";
+import { YtDlp } from "ytdlp-nodejs";
 
 import { db } from "./db";
 import { Job } from "./jobs";
 import buildIndex from "./jobs/buildIndex";
-import transcribe from "./jobs/transcribe";
+import checkForCookies from "./jobs/checkForCookies";
+import downloadYtDlp from "./jobs/downloadYtDlp";
 import registerInterval from "./jobs/registerInterval";
 import startServer from "./jobs/startServer";
-import downloadYtDlp from "./jobs/downloadYtDlp";
-import checkCookies from "./jobs/checkCookies";
+import transcribe from "./jobs/transcribe";
 
 export const ytdlp = new YtDlp({ binaryPath: "C:\\Users\\zanes\\Downloads\\yt-dlp.exe" });
 export const cookiesPath = path.resolve(__dirname, "../cookies.txt");
@@ -30,7 +29,7 @@ Job.pushQueue(
 	registerInterval,
 	buildIndex,
 	startServer,
-	// downloadYtDlp,
-	// checkCookies,
-	// transcribe,
+	downloadYtDlp,
+	checkForCookies,
+	transcribe,
 );

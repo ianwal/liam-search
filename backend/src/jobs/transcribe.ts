@@ -8,7 +8,6 @@ import { cookiesPath, ytdlp } from "../main";
 import type { VideoCache, VideoMetadata } from "../types";
 import buildIndex from "./buildIndex";
 
-// const playlists = ["https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay", "https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZI0Ijd1xcjcT3Y6ht5NEX9"];
 const playlists = [
 	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_YPhchO2f48lssHKENSMAYy",
 	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZYPbJhACQKEiyb43DXunBy",
