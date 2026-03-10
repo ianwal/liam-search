@@ -1,15 +1,4 @@
-# backend
+# Liam Search Backend
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.3.2. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+1. install ffmpeg-shared
+2. install cuda toolkit (https://developer.nvidia.com/cuda-12-8-1-download-archive)

@@ -1,267 +1,377 @@
 <script lang="ts">
-	import { ArrowLeft, ArrowLeftToLine, ArrowRight, ArrowRightToLine, Search } from "lucide-svelte";
-	import { onMount } from "svelte";
-	import StatusBanner from "./lib/components/StatusBanner.svelte";
+	import { ArrowLeft, ArrowLeftToLine, ArrowRight, ArrowRightToLine, FunnelIcon, Search } from "lucide-svelte";
+	import { onMount, tick } from "svelte";
 
-	let data: any = $state(null);
-	let status: string = $state("");
-	let forceUpdateStatus = $state(true);
+	import type { SearchResponse } from "@/types";
+	import Result from "./lib/components/Result.svelte";
 
-	let searchQueryInput: HTMLInputElement;
-	let helpModal: HTMLDialogElement;
-	let helpModalContent: HTMLElement;
+	const exampleLog = {
+		timestamp: "2026-03-08T04:31:45.273Z",
+		level: "INFO",
+		request_id: "522424d7-1be8-4e27-ac31-c33661ca06d6",
+		method: "GET",
+		path: "/search",
+		query: "[REDACTED]",
+		status: 200,
+		search_ms: 175.87,
+		results_count: 73236,
+	};
 
-	async function doSearch(query: string, page?: number) {
-		const res = await fetch(`${import.meta.env.VITE_API_URL}/search?query=${query}&page=${page}`);
-		data = await res.json();
+	let searchForm: HTMLFormElement;
 
-		const url = new URL(window.location.toString());
-		url.searchParams.set("query", query);
-		url.searchParams.set("page", data.page.toString());
-		history.pushState({}, "", url);
+	let queryValue: string = $state("");
+	let videoIdValue: string = $state("");
+	let fromValue: string = $state("");
+	let toValue: string = $state("");
+	let sortValue: string = $state("best");
+	let matchValue: string = $state("all");
+	let page: number = $state(1);
 
-		document.title = `Liam Search - Search for "${query}" (page ${data.page}/${data.totalPages})`;
-	}
+	let searchResponse: SearchResponse | undefined = $state(undefined);
+	let searchState: "ready" | "loading" | "error" | "rate_limit" = $state("ready");
 
-	async function updateStatus() {
-		forceUpdateStatus = false;
-
-		try {
-			const res = await fetch(`${import.meta.env.VITE_API_URL}/status`);
-			if (res.ok) {
-				status = (await res.json()).status;
-			} else {
-				status = "api_error";
-			}
-		} catch {
-			status = "api_error";
-		}
-	}
+	let filterSortModal: HTMLDialogElement;
+	let infoModal: HTMLDialogElement;
 
 	onMount(async () => {
-		await updateStatus();
-
-		async function tryUpdateStatus() {
-			forceUpdateStatus = true;
-			if (document.hasFocus()) await updateStatus();
-		}
-
-		let updateInterval = setInterval(tryUpdateStatus, 30000);
-
-		window.addEventListener("focus", async () => {
-			if (forceUpdateStatus) {
-				clearInterval(updateInterval);
-				updateInterval = setInterval(tryUpdateStatus, 30000);
-				await updateStatus();
-			}
-		});
-
-		const url = new URL(window.location.toString());
+		const url = new URL(window.location.href);
 		const query = url.searchParams.get("query");
-		const page = parseInt(url.searchParams.get("page") || "1");
+
+		if (url.searchParams.get("id")) videoIdValue = url.searchParams.get("id")!;
+		if (url.searchParams.get("from")) fromValue = url.searchParams.get("from")!;
+		if (url.searchParams.get("to")) toValue = url.searchParams.get("to")!;
+		if (url.searchParams.get("sort")) sortValue = url.searchParams.get("sort")!;
+		if (url.searchParams.get("match")) matchValue = url.searchParams.get("match")!;
+		if (url.searchParams.get("page")) page = parseInt(url.searchParams.get("page")!);
+
 		if (query) {
-			searchQueryInput.value = query;
-			doSearch(query, page);
+			queryValue = query;
+			document.title = `Liam Search - Search for "${query}"`;
+
+			searchState = "loading";
+
+			try {
+				const res = await fetch(`${import.meta.env.VITE_API_URL}/search${url.search}`);
+
+				if (res.ok) {
+					searchResponse = (await res.json()) as SearchResponse;
+					searchState = "ready";
+				} else if (res.status == 429) {
+					searchState = "rate_limit";
+				} else {
+					searchState = "error";
+				}
+			} catch (err) {
+				console.error(err);
+				searchState = "error";
+			}
 		}
 	});
+
+	async function search() {
+		await tick();
+
+		const formData = new FormData(searchForm);
+
+		if (formData.get("query")) {
+			const searchParams = new URLSearchParams();
+
+			for (const [key, value] of formData.entries()) {
+				if (value != "") {
+					searchParams.append(key, value.toString());
+				}
+			}
+
+			window.location.href = `${searchForm.action}?${searchParams.toString()}`;
+		} else {
+			window.location.href = searchForm.action;
+		}
+	}
+
+	// scuffed
+	function resetForm() {
+		videoIdValue = "";
+		fromValue = "";
+		toValue = "";
+		sortValue = "best";
+		matchValue = "all";
+
+		search();
+	}
 </script>
 
-<main class="mx-auto flex h-screen w-[512px] flex-col gap-5 pt-10">
-	<div class="flex flex-col items-center">
+<svelte:head>
+	<link rel="preload" as="image" href={"/LiamConga.avif"} />
+	<link rel="preload" as="image" href={"/liamkSlam.avif"} />
+	<link rel="preload" as="image" href={"/Buggin.avif"} />
+	<link rel="preload" as="image" href={"/poroAgony.avif"} />
+</svelte:head>
+
+<main class="mx-auto flex h-screen w-full flex-col gap-5 px-8 pt-10 md:px-16 2xl:px-42">
+	<div class="mx-auto mb-5 flex w-fit flex-col items-center">
 		<a href="/" class="flex items-center justify-center gap-5">
-			<img src="logo.png" alt="Liam logo" class="h-16" />
+			<img src="logo.png" alt="Liam's logo with a magnifying glass" class="h-16" />
 			<h1>Liam Search</h1>
 		</a>
-		<p class="text-gray-500">made by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
+		<p class="-mt-1.5 ml-auto text-gray-500">by <a href="https://squidee.dev/" target="_blank" class="link">squidee_</a> from chat</p>
 	</div>
 	<form
+		bind:this={searchForm}
+		action="/"
 		onsubmit={(e) => {
 			e.preventDefault();
-			doSearch(searchQueryInput.value, 1);
+			page = 1;
+			search();
 		}}
-		class="light-outline flex overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!"
 	>
-		<!-- svelte-ignore a11y_autofocus -->
-		<input type="text" bind:this={searchQueryInput} autofocus placeholder="use double quotes to search an exact phrase" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
-		<button class="btn rounded-none! px-4!"><Search class="w-5" /></button>
-	</form>
-	<div class="w-full rounded-lg bg-red-950 p-3 text-center text-red-400">
-		<span>temporarily down!</span>
-	</div>
-	<span class="text-center text-gray-300">
-		i'm in the middle of reworking the entire backend to allow for swear words and advanced sorting. keeping this shutdown for now because the current backend is frying my server. sorry for the inconvenience. should hopefully be back by the
-		end of feb :)
-	</span>
-	{#if data}
-		{#if data.results?.length > 0}
-			{#snippet resultsText()}
-				<span class="text-gray-500 italic"
-					>{data.resultsPerPage * (data.page - 1) + 1}-{Math.min(data.resultsPerPage * data.page, data.totalResults)} of {data.totalResults} results ({data.totalPages} pages)</span
-				>
-			{/snippet}
-			{#snippet pageList()}
-				<div class="flex items-center justify-center gap-2">
-					<div class="flex gap-1">
-						<button
-							disabled={data.page == 1}
-							onclick={() => doSearch(searchQueryInput.value, 1)}
-							title="first page"
-							class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowLeftToLine /></button
-						>
-						<button
-							disabled={data.page == 1}
-							onclick={() => doSearch(searchQueryInput.value, data.page - 1)}
-							title="previous page (page {data.page - 1})"
-							class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowLeft class="size-[22px]" /></button
-						>
-					</div>
-					<div class="flex">
-						{#each Array.from({ length: data.totalPages }) as _, i}
-							{@const number = i + 1}
-							{@const centre = Math.min(Math.max(2 + 1, data.page), data.totalPages - 2)}
-							{#if Math.abs(number - centre) <= 2}
-								<button onclick={() => doSearch(searchQueryInput.value, number)} title="page {number}" class="size-7 cursor-pointer">
-									<span class={number == data.page ? "text-white" : "text-gray-500"}>{number}</span>
-								</button>
-							{/if}
-						{/each}
-					</div>
-					<div class="flex gap-1">
-						<button
-							disabled={data.page == data.totalPages}
-							onclick={() => doSearch(searchQueryInput.value, data.page + 1)}
-							title="next page (page {data.page + 1})"
-							class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowRight class="size-[22px]" /></button
-						>
-						<button
-							disabled={data.page == data.totalPages}
-							onclick={() => doSearch(searchQueryInput.value, data.totalPages)}
-							title="last page (page {data.totalPages})"
-							class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowRightToLine /></button
-						>
-					</div>
+		<div class="flex flex-col gap-2">
+			<div class="mx-auto flex w-full items-center gap-2">
+				<div class="light-outline flex grow overflow-clip rounded-full outline-1 has-[input:focus]:outline-blue-500!">
+					<!-- svelte-ignore a11y_autofocus -->
+					<input bind:value={queryValue} type="text" name="query" autofocus placeholder="Search" class="bg-background! grow px-5 py-1 placeholder:text-gray-500" />
+					<label class="btn rounded-none! px-4!">
+						<input type="submit" class="hidden" />
+						<Search class="w-5" />
+					</label>
 				</div>
-			{/snippet}
-
-			{@render resultsText()}
-			{@render pageList()}
-			<div class="mx-auto flex flex-col gap-10">
-				{#each data.results as video, i}
-					{@const timestamp = new Date(`1970-01-01T${video.time_start.split(",")[0]}.000Z`).getTime() / 1000}
-					<div class="flex flex-col">
-						{#if i < 5}
-							<iframe
-								width="512"
-								height="288"
-								src="https://www.youtube-nocookie.com/embed/{video.video_id}?start={timestamp}"
-								title=""
-								frameborder="0"
-								allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-								allowfullscreen
-								class="bg-black"
-							></iframe>
-						{:else}
-							<a href="https://www.youtube.com/watch?v={video.video_id}&t={timestamp}" target="_blank">
-								<img src={video.thumbnail} alt="" class="h-full w-full" />
-							</a>
-						{/if}
-						<p>
-							<a href="https://www.youtube.com/watch?v={video.video_id}" target="_blank" class="font-bold">
-								{video.title}
-							</a>
-							<span class="text-gray-500">at</span>
-							<a href="https://www.youtube.com/watch?v={video.video_id}&t={timestamp}" target="_blank" class="text-blue-500 hover:text-blue-400">
-								{video.time_start.split(",")[0]}
-							</a>
-						</p>
-						<p class="text-gray-500 italic">"...{video.text_before} <span class="font-medium text-white">{video.text}</span> {video.text_after}..."</p>
-					</div>
-				{/each}
+				<button onclick={() => filterSortModal.showModal()} type="button" class="flex size-8 cursor-pointer items-center justify-center">
+					<FunnelIcon class="stroke-gray-500" />
+				</button>
 			</div>
-			{@render pageList()}
-			<div class="flex justify-center">{@render resultsText()}</div>
-		{:else}
-			<p class="text-center text-gray-500 italic">no results</p>
+			{#if searchResponse}
+				<span class="w-max text-gray-500 italic">
+					{#if searchResponse.resultCount > 0}
+						{@const resultsRangeFrom = searchResponse.perPage! * (searchResponse.page! - 1) + 1}
+						{@const resultsRangeTo = Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)}
+
+						{resultsRangeFrom.toLocaleString("en-US")}&ndash;{resultsRangeTo.toLocaleString("en-US")} of
+						{searchResponse.resultCount.toLocaleString("en-US")} results ({searchResponse.pageCount.toLocaleString("en-US")} pages) in {searchResponse.ms} ms
+					{:else}
+						0 results in {searchResponse.ms} ms
+					{/if}
+				</span>
+			{/if}
+		</div>
+
+		<dialog
+			bind:this={filterSortModal}
+			onmousedown={(e) => {
+				if (e.target == filterSortModal) filterSortModal.close();
+			}}
+			class="backdrop:bg-black/50"
+		>
+			<div class="bg-background light-outline fixed top-[120px] left-1/2 flex h-max w-[450px] -translate-x-1/2 flex-col rounded">
+				<div class="flex items-center justify-between border-b border-gray-700 p-4">
+					<h2>Filter and Sort</h2>
+					<button onclick={resetForm} class="btn">Reset</button>
+				</div>
+				<div class="flex flex-col gap-4 overflow-y-auto p-4">
+					<input bind:value={videoIdValue} type="text" name="id" placeholder="Video ID (GzOs8nQt27g)" class="btn cursor-text! outline-1!" />
+					<div class="flex items-center gap-2">
+						<input bind:value={fromValue} type="date" name="from" class="btn grow" />
+						<span class="text-liam-skin">&mdash;</span>
+						<input bind:value={toValue} type="date" name="to" class="btn grow" />
+					</div>
+					<select bind:value={sortValue} name="sort" class="btn">
+						<option value="best">sort by best</option>
+						<option value="latest">sort by latest</option>
+						<option value="oldest">sort by oldest</option>
+					</select>
+					<select bind:value={matchValue} name="match" class="btn">
+						<option value="all">match all words in query</option>
+						<option value="any">match any word in query</option>
+					</select>
+				</div>
+			</div>
+		</dialog>
+		<input bind:value={page} type="number" name="page" class="hidden" />
+	</form>
+
+	<div class="flex justify-center">
+		{#if searchState == "ready"}
+			{#if searchResponse}
+				{#if searchResponse.results.length > 0}
+					{#snippet pageList(res: SearchResponse)}
+						<div class="flex w-max items-center gap-2">
+							<div class="flex gap-1">
+								<button
+									disabled={res.page == 1}
+									onclick={() => {
+										page = 1;
+										search();
+									}}
+									title="first page"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowLeftToLine /></button
+								>
+								<button
+									disabled={res.page == 1}
+									onclick={() => {
+										page--;
+										search();
+									}}
+									title="previous page (page {res.page! - 1})"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowLeft class="size-[22px]" /></button
+								>
+							</div>
+							<div class="flex">
+								{#each Array.from({ length: res.pageCount! }) as _, i}
+									{@const number = i + 1}
+									{@const centre = Math.min(Math.max(2 + 1, res.page!), res.pageCount! - 2)}
+									{#if Math.abs(number - centre) <= 2}
+										<button
+											onclick={() => {
+												page = number;
+												search();
+											}}
+											title="page {number}"
+											class="group h-7 cursor-pointer px-2"
+										>
+											<span class={number == res.page ? "text-white" : "text-gray-500 group-hover:text-white"}>{number}</span>
+										</button>
+									{/if}
+								{/each}
+							</div>
+							<div class="flex gap-1">
+								<button
+									disabled={res.page == res.pageCount}
+									onclick={() => {
+										page++;
+										search();
+									}}
+									title="next page (page {res.page! + 1})"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowRight class="size-[22px]" /></button
+								>
+								<button
+									disabled={res.page == res.pageCount}
+									onclick={() => {
+										page = res.pageCount!;
+										search();
+									}}
+									title="last page (page {res.pageCount})"
+									class="text-gray-400 not-disabled:cursor-pointer not-disabled:hover:text-white disabled:text-gray-600"><ArrowRightToLine /></button
+								>
+							</div>
+						</div>
+					{/snippet}
+
+					<div class="flex flex-col items-center gap-5">
+						<div class="mx-auto grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+							{#each searchResponse?.results as result}
+								<Result {result} />
+							{/each}
+						</div>
+						{@render pageList(searchResponse)}
+					</div>
+				{:else}
+					<div class="flex flex-col items-center gap-2">
+						<img src="/liamkSlam.avif" alt="liamkSlam emote" class="h-20" />
+						<span class="text-gray-500 italic">no results</span>
+					</div>
+				{/if}
+			{/if}
+		{:else if searchState == "loading"}
+			<img src="/LiamConga.avif" alt="LiamConga emote" class="h-20" />
+		{:else if searchState == "rate_limit"}
+			<div class="flex flex-col items-center gap-2">
+				<img src="/Buggin.avif" alt="Buggin emote" class="h-20" />
+				<span class="text-gray-500 italic">stop spamming</span>
+			</div>
+		{:else if searchState == "error"}
+			<div class="flex flex-col items-center gap-2">
+				<img src="/poroAgony.avif" alt="poroAgony emote" class="h-20" />
+				<span class="text-gray-500 italic">something went wrong</span>
+			</div>
 		{/if}
-	{/if}
+	</div>
+
 	<footer class="mt-auto flex flex-col items-center gap-5 py-10 text-gray-500">
-		<span>latest update: searches now commit to your history.</span>
+		<span class="w-[450px] text-center">Latest update: Full rework! Now supports date ranges, sorting, word matching, swear words, and more VODs.</span>
 		<div class="flex gap-2">
-			<button
-				onclick={() => {
-					helpModal.showModal();
-					helpModalContent.scrollTo(0, 0);
-				}}
-				class="link">help / more info</button
-			>
+			<button onclick={() => infoModal.showModal()} class="link">Help / Info</button>
 			<span>•</span>
-			<a href="https://github.com/zaneshaw/liam-search" target="_blank" class="link">source code<sup>🡥</sup></a>
+			<a href="https://github.com/zaneshaw/liam-search" target="_blank" class="link">Source code<sup>🡥</sup></a>
 			<span>•</span>
-			<a href="https://www.twitch.tv/liam" target="_blank" class="link">liam twitch<sup>🡥</sup></a>
+			<a href="https://www.twitch.tv/liam" target="_blank" class="link">Twitch<sup>🡥</sup></a>
+			<span>•</span>
+			<a href="https://www.youtube.com/@LiamKings" target="_blank" class="link">YouTube<sup>🡥</sup></a>
 		</div>
 	</footer>
 </main>
-<dialog bind:this={helpModal} class="inset-0 size-full max-h-none max-w-none bg-transparent">
-	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-	<div
-		onclick={(e) => {
-			if (e.target === helpModal.firstChild) helpModal.close();
-		}}
-		class="flex h-full w-full items-center justify-center bg-black/50"
-	>
-		<div class="bg-liam-background text-liam-skin flex h-[500px] w-[650px] overflow-hidden rounded-lg">
-			<div bind:this={helpModalContent} class="flex flex-col gap-8 overflow-y-auto px-6 py-8">
-				<div class="flex flex-col gap-2">
-					<h2>privacy statement</h2>
-					<p>i log search queries and IP addresses solely to prevent abuse. i don't sell or share these logs with third parties. by using Liam Search, you consent to this collection.</p>
-				</div>
-				<div class="flex flex-col gap-2">
-					<h2>bug / feedback</h2>
-					<p>
-						if something is broken or you want to give feedback/suggest something, feel free to open an issue on
-						<a href="https://github.com/zaneshaw/liam-search/issues/new" target="_blank" class="link">github</a> or add me on discord (@zaneshaw).
-					</p>
-				</div>
-				<div class="flex flex-col gap-2">
-					<h2>faq <span class="text-liam-skin font-light">(no one asked these)</span></h2>
-					<div>
-						<p class="text-white italic">why can't i search swear words?</p>
-						<p>
-							the index is built from youtube subtitles, which replace pretty much every swear word with "[ __ ]". i'm planning to transcribe the vods locally at some point so i don't
-							have to depend on youtube's transcription.
-						</p>
-					</div>
-					<div>
-						<p class="text-white italic">which vods are indexed?</p>
-						<p>
-							every video in this <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">vod playlist</a> by
-							<a href="https://www.youtube.com/@LiamUnofficialVODs-dz8it" target="_blank" class="link">Liam Unofficial VODs</a> (minus about 30 videos that have unpublished subtitles)
-							and this <a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay" target="_blank" class="link">top clips playlist</a> by
-							<a href="https://www.youtube.com/@ACIDMONEY" target="_blank" class="link">ACIDMONEY</a>.
-						</p>
-					</div>
-					<div>
-						<p class="text-white italic">why do only the first few results have embeds?</p>
-						<p>loading more than like 20 youtube embeds freezes your browser, so for now only the first 5 results will have a youtube embed, while the rest will just be a thumbnail.</p>
-					</div>
-				</div>
-				<div class="flex flex-col gap-2">
-					<h2>indexing process</h2>
-					<ol class="ml-4.5 list-decimal">
-						<li>
-							video metadata is fetched from the <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">vod playlist</a> and the
-							<a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay" target="_blank" class="link">top clips playlist</a> with yt-dlp
-						</li>
-						<li>srt subtitles are downloaded from these videos with yt-dlp</li>
-						<li>
-							the srt files are merged together to form a large json file (~150 MB) containing the text, start time, and video id of each subtitle chunk (a chunk is the highlighted text
-							when you search something)
-						</li>
-						<li>i then use <a href="https://github.com/meilisearch/meilisearch" target="_blank" class="link">Meilisearch</a> to index each subtitle chunk locally</li>
-						<li>this process is repeated every day at 12:00 AM AEST</li>
-					</ol>
-				</div>
-				<p>the name "Liam Search" and domain name "liamsear.ch" are directly inspired by <a href="https://yardsear.ch/" target="_blank" class="link">yardsear.ch</a>.</p>
+
+<dialog
+	bind:this={infoModal}
+	onmousedown={(e) => {
+		if (e.target == infoModal) infoModal.close();
+	}}
+	class="backdrop:bg-black/50"
+>
+	<div class="bg-background text-liam-skin light-outline fixed top-1/2 left-1/2 flex h-[600px] w-[450px] -translate-1/2 flex-col rounded">
+		<div class="border-b border-gray-700 p-4">
+			<h2>Help / Info</h2>
+		</div>
+		<div class="flex flex-col gap-4 overflow-y-auto p-4">
+			<div>
+				<h2 class="mb-2">Disclaimer and Privacy</h2>
+				<p>Liam Search is an unofficial website that is not affiliated in any way with the streamer Liam. The Liam silhouette logo belongs to Liam.</p>
+				<br />
+				<p>
+					I DO NOT keep a log of your search queries. I DO keep a log of when searches occur with the query redacted. Your IP address is NOT associated with these logs. I don't sell or share
+					these logs with third parties. By using Liam Search, you consent to this collection.
+					<span title={JSON.stringify(exampleLog, null, "\t")} class="cursor-help underline decoration-dotted">Example log entry</span>
+				</p>
+				<br />
+				<p>
+					This site was inspired by <a href="https://yardsear.ch" target="_blank" class="link">yardsear.ch</a>. I also copied this popup from
+					<a href="https://jerkoffs.live/" target="_blank" class="link">jerkoffs.live</a> pretty much one to one.
+				</p>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">Bugs / Feedback</h2>
+				<p>
+					If something is broken or you want to give feedback/suggest something, feel free to open an issue on <a
+						href="https://github.com/zaneshaw/liam-search/issues/new"
+						target="_blank"
+						class="link">GitHub</a
+					> or add me on Discord (@zaneshaw).
+				</p>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">How it works</h2>
+				<ol class="flex list-inside list-decimal flex-col gap-2">
+					<li>
+						Metadata and audio is pulled from <a href="https://www.youtube.com/playlist?list=PLeMf46ndvGffIJt5KKDa_5SbXZ6F3azhP" target="_blank" class="link">my playlist</a>,
+						<a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvgOPOBWdh2-xBxkK5sX90CK" target="_blank" class="link">Liam Unofficial VODs' playlist (minus my uploads)</a>
+						and <a href="https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay" target="_blank" class="link">ACIDMONEY's clip compilations</a>
+						with <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="link">yt-dlp</a> every 6 hours
+					</li>
+					<li>Audio is transcribed with <a href="https://github.com/m-bain/whisperX" target="_blank" class="link">whisperX</a> (large-v3 model)</li>
+					<li>The transcription is added to a <a href="https://github.com/lucaong/minisearch" target="_blank" class="link">MiniSearch</a> index</li>
+					<li>You query that index with whatever paramaters you set, and the results are displayed here</li>
+				</ol>
+			</div>
+			<hr />
+			<div>
+				<h2 class="mb-2">Notes</h2>
+				<ul class="flex list-inside list-['-_'] flex-col gap-2">
+					<li>Only VODs after July 2023 as well as some clips are indexed. I plan to index every clip at some point</li>
+					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
+					<li>The transcriber hallucinates speech sometimes (especially during parts with no speech like the 10 minute intros)</li>
+					<li>
+						Unfortunately a lot of stuff is just misheard by the transcriber. A big example is "Wait, am I live?" being misheard as:
+						<ul class="ml-2 list-inside list-['-_']">
+							<li>"When am I live?"</li>
+							<li>"What am I live?"</li>
+							<li>"Wait am I alive?"</li>
+							<li>etc</li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+			<hr />
+			<div class="flex justify-center">
+				<img src="/liamkL.png" alt="poroAgony emote" class="h-6" />
 			</div>
 		</div>
 	</div>

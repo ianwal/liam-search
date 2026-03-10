@@ -1,21 +1,30 @@
 {
   "name": "liam-search-backend",
   "module": "index.ts",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "bun run index.ts"
+    "dev": "bun run src/main.ts",
+    "format": "bun prettier . --write"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/bun": "latest",
+    "@types/pluralize": "^0.0.33",
+    "prettier": "^3.8.1"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
-  "private": true,
-  "type": "module",
   "dependencies": {
-    "@hono/node-server": "^1.19.6",
-    "hono": "^4.10.7",
-    "meilisearch": "^0.54.0",
-    "yt-dlp-wrap": "^2.3.12"
+    "@hono/bun-compress": "^0.1.0",
+    "@hono/zod-validator": "^0.7.6",
+    "hono": "^4.12.2",
+    "hono-rate-limiter": "^0.5.3",
+    "meilisearch": "^0.55.0",
+    "minisearch": "^7.2.0",
+    "pluralize": "^8.0.0",
+    "ytdlp-nodejs": "^3.4.4",
+    "zod": "^4.3.6"
   }
 }
