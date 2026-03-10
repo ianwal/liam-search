@@ -45,3 +45,12 @@ Currently using these playlists:
 2. Install dependencies with `bun i`
 3. Copy **.env.example** to **.env**
 4. Run with `bun dev`
+
+## Roadmap
+
+- [ ] **Rework the job system**: jobs api endpoint, batch jobs, complete rewrite
+- [ ] **Twitch clips**: index all Liam Twitch clips before the oldest VOD in the current index
+- [ ] **Better transcription**: i hate whisperX and python >:(
+- [ ] **Config file**: allow for more configuration without modifying the code
+	- [ ] **GPU/CPU switch**: switch between GPU mode and CPU compat mode
+- [ ] **Better error handling**
