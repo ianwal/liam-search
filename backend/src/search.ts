@@ -6,7 +6,7 @@ import { db } from "./db";
 
 export const msClient = new MeiliSearch({
 	host: Bun.env.VITE_MEILISEARCH_HOST!,
-	apiKey: "RKMpVWiC7sW3cDhdCCbp",
+	apiKey: Bun.env.VITE_MEILISEARCH_KEY!,
 });
 
 const index = msClient.index("segments");
