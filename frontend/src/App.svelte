@@ -119,6 +119,7 @@
 		action="/"
 		onsubmit={(e) => {
 			e.preventDefault();
+			page = 1;
 			search();
 		}}
 	>
@@ -139,8 +140,11 @@
 			{#if searchResponse}
 				<span class="w-max text-gray-500 italic">
 					{#if searchResponse.resultCount > 0}
-						{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of
-						{searchResponse.resultCount.toLocaleString("en-US")} results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
+						{@const resultsRangeFrom = searchResponse.perPage! * (searchResponse.page! - 1) + 1}
+						{@const resultsRangeTo = Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)}
+
+						{resultsRangeFrom.toLocaleString("en-US")}&ndash;{resultsRangeTo.toLocaleString("en-US")} of
+						{searchResponse.resultCount.toLocaleString("en-US")} results ({searchResponse.pageCount.toLocaleString("en-US")} pages) in {searchResponse.ms} ms
 					{:else}
 						0 results in {searchResponse.ms} ms
 					{/if}
@@ -223,9 +227,9 @@
 												search();
 											}}
 											title="page {number}"
-											class="size-7 cursor-pointer"
+											class="group h-7 cursor-pointer px-2"
 										>
-											<span class={number == res.page ? "text-white" : "text-gray-500"}>{number}</span>
+											<span class={number == res.page ? "text-white" : "text-gray-500 group-hover:text-white"}>{number}</span>
 										</button>
 									{/if}
 								{/each}
@@ -356,7 +360,16 @@
 				<ul class="flex list-inside list-['-_'] flex-col gap-2">
 					<li>Only VODs after July 2023 as well as some clips are indexed. I plan to index every clip at some point</li>
 					<li>There is a limit of 10 searches in a sliding window of 30 seconds to prevent abuse</li>
-					<li>Unfortunately the transcriber hallucinates speech sometimes (especially during parts with no speech like the 10 minute intros)</li>
+					<li>The transcriber hallucinates speech sometimes (especially during parts with no speech like the 10 minute intros)</li>
+					<li>
+						Unfortunately a lot of stuff is just misheard by the transcriber. A big example is "Wait, am I live?" being misheard as:
+						<ul class="ml-2 list-inside list-['-_']">
+							<li>"When am I live?"</li>
+							<li>"What am I live?"</li>
+							<li>"Wait am I alive?"</li>
+							<li>etc</li>
+						</ul>
+					</li>
 				</ul>
 			</div>
 			<hr />

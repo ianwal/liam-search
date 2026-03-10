@@ -9,9 +9,10 @@
 
 	function secondsToTimestamp(seconds: number) {
 		const hours = Math.floor(seconds / 60 / 60);
-		const minutes = Math.floor(seconds / 60) % 60;
+		const minutes = (Math.floor(seconds / 60) % 60).toString().padStart(2, "0");
+		const _seconds = (seconds % 60).toString().padStart(2, "0");
 
-		return (hours ? `${hours}:` : "") + `${minutes}:${(seconds % 60).toString().padStart(2, "0")}`;
+		return (hours ? `${hours}:` : "") + `${minutes}:${_seconds}`;
 	}
 </script>
 
