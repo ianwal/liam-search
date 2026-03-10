@@ -21,6 +21,7 @@
     "@hono/zod-validator": "^0.7.6",
     "hono": "^4.12.2",
     "hono-rate-limiter": "^0.5.3",
+    "meilisearch": "^0.55.0",
     "minisearch": "^7.2.0",
     "pluralize": "^8.0.0",
     "ytdlp-nodejs": "^3.4.4",

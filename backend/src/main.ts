@@ -30,7 +30,7 @@ Job.pushQueue(
 	registerInterval,
 	buildIndex,
 	startServer,
-	downloadYtDlp,
-	checkCookies,
-	transcribe,
+	// downloadYtDlp,
+	// checkCookies,
+	// transcribe,
 );

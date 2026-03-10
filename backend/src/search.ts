@@ -1,68 +1,87 @@
-import MiniSearch from "minisearch";
-import { singular } from "pluralize";
+import { MeiliSearch } from "meilisearch";
 
-import type { SearchResult } from "@/types";
+import type { SearchResponse, SearchResult } from "@/types";
 
 import { db } from "./db";
 
-export const index = new MiniSearch({
-	fields: ["text"],
-	storeFields: ["previousId", "nextId", "videoId", "seconds", "text"],
-
-	// https://github.com/lucaong/minisearch/blob/3d239d1c3ae7aef1bf5d8945dd7b5f0709f646f5/src/MiniSearch.ts#L2261
-	tokenize: (string, _fieldName) => string.split(/(?!['"])[\n\r\p{Z}\p{P}]/gu),
-
-	processTerm: (term) => singular(term.toLowerCase().replace(/['"]/gu, "")),
+export const msClient = new MeiliSearch({
+	host: "http://callisto:7700/",
+	apiKey: "RKMpVWiC7sW3cDhdCCbp",
 });
 
-export let queryCache: { encodedQuery: string; results: SearchResult[] }[] = [];
+const index = msClient.index("segments");
 
-// todo: rewrite. maybe use meilisearch again too
-export async function search(query: string, sort: "best" | "latest" | "oldest", match: "all" | "any", from: number, to: number, id?: string): Promise<SearchResult[]> {
-	const encodedQuery = Array.from(arguments).join("/");
-	const cached = queryCache.find((query) => query.encodedQuery == encodedQuery);
+await index.updatePagination({ maxTotalHits: Number.MAX_SAFE_INTEGER });
+await index.updateTypoTolerance({ enabled: false });
+await index.updateFilterableAttributes(["videoId", "videoTimestamp"]);
+await index.updateSortableAttributes(["videoTimestamp", "seconds"]);
 
-	if (cached) return cached.results;
+export async function search(
+	query: string,
+	options: {
+		sort: "best" | "latest" | "oldest";
+		match: "all" | "any";
+		from: number;
+		to: number;
+		id?: string;
+		page: number;
+		perPage: number;
+	},
+): Promise<SearchResponse> {
+	const startTime = performance.now();
 
-	const results = index.search(query, { combineWith: match == "all" ? "AND" : "OR" });
-	const videos = db.query("select id, title, thumbnailUrl, uploadTimestamp from videos").all() as { id: string; title: string; thumbnailUrl: string; uploadTimestamp: number }[];
-
-	let richResults: SearchResult[] = results.flatMap(({ videoId, seconds, text, previousId, nextId }) => {
-		const video = videos.find((v) => v.id == videoId);
-		if (!id || id == videoId) {
-			return [
-				{
-					video: {
-						id: videoId,
-						title: video!.title,
-						thumbnailUrl: video!.thumbnailUrl,
-						uploadTimestamp: video!.uploadTimestamp,
-					},
-					seconds,
-					text,
-					previousText: (index.getStoredFields(previousId)?.text as string) ?? null,
-					nextText: (index.getStoredFields(nextId)?.text as string) ?? null,
-				},
-			];
-		}
-
-		return [];
-	});
-
-	richResults = richResults.filter((result) => result.video.uploadTimestamp >= from && result.video.uploadTimestamp <= to);
-
-	if (sort == "latest") richResults.sort((a, b) => b.video.uploadTimestamp - a.video.uploadTimestamp || b.seconds - a.seconds);
-	if (sort == "oldest") richResults.sort((a, b) => a.video.uploadTimestamp - b.video.uploadTimestamp || a.seconds - b.seconds);
-
-	cacheQuery(encodedQuery, richResults);
-
-	return richResults;
-}
-
-function cacheQuery(encodedQuery: string, results: SearchResult[]) {
-	if (queryCache.length >= 25) {
-		queryCache.shift();
+	const sortArr: string[] = [];
+	switch (options.sort) {
+		case "latest":
+			sortArr.push("videoTimestamp:desc", "seconds:desc");
+			break;
+		case "oldest":
+			sortArr.push("videoTimestamp:asc", "seconds:asc");
+			break;
 	}
 
-	queryCache.push({ encodedQuery, results });
+	const filterArr = [`videoTimestamp >= ${options.from} AND videoTimestamp < ${options.to}`];
+	if (options.id) filterArr.push(`videoId = "${options.id}"`);
+
+	const res = await index.search(options.match == "all" ? `"${query}"` : query, {
+		page: options.page,
+		hitsPerPage: options.perPage,
+		matchingStrategy: options.match == "all" ? "all" : "frequency",
+		sort: sortArr,
+		filter: filterArr,
+	});
+
+	const videos = db.query("select id, title, thumbnailUrl, uploadTimestamp from videos").all() as { id: string; title: string; thumbnailUrl: string; uploadTimestamp: number }[];
+	let results: SearchResult[] = [];
+
+	for await (const { videoId, seconds, text, previousId, nextId } of res.hits) {
+		const video = videos.find((v) => v.id == videoId);
+		if (!options.id || options.id == videoId) {
+			results.push({
+				video: {
+					id: videoId,
+					title: video!.title,
+					thumbnailUrl: video!.thumbnailUrl,
+					uploadTimestamp: video!.uploadTimestamp,
+				},
+				seconds,
+				text,
+				previousText: ((await msClient.index("segments").getDocument(previousId)).text as string) ?? null,
+				nextText: ((await msClient.index("segments").getDocument(nextId)).text as string) ?? null,
+			});
+		}
+	}
+
+	// results = results.filter((result) => result.video.uploadTimestamp >= options.from && result.video.uploadTimestamp <= options.to);
+
+	const searchMs = parseFloat((performance.now() - startTime).toFixed(2));
+
+	return {
+		ms: searchMs,
+		page: options.page,
+		perPage: options.perPage,
+		pageCount: res.totalPages,
+		resultCount: res.totalHits,
+		results,
+	};
 }

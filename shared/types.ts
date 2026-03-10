@@ -1,8 +1,8 @@
 export type SearchResponse = {
 	ms: number;
-	page?: number;
-	perPage?: number;
-	pageCount?: number;
+	page: number;
+	perPage: number;
+	pageCount: number;
 	resultCount: number;
 	results: SearchResult[];
 };
