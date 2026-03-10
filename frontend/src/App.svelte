@@ -62,6 +62,7 @@
 					searchState = "error";
 				}
 			} catch (err) {
+				console.error(err);
 				searchState = "error";
 			}
 		}
