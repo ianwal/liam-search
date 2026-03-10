@@ -86,6 +86,17 @@
 			window.location.href = searchForm.action;
 		}
 	}
+
+	// scuffed
+	function resetForm() {
+		videoIdValue = "";
+		fromValue = "";
+		toValue = "";
+		sortValue = "best";
+		matchValue = "all";
+
+		search();
+	}
 </script>
 
 <svelte:head>
@@ -128,8 +139,8 @@
 			{#if searchResponse}
 				<span class="w-max text-gray-500 italic">
 					{#if searchResponse.resultCount > 0}
-						{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of {searchResponse.resultCount}
-						results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
+						{searchResponse.perPage! * (searchResponse.page! - 1) + 1}&ndash;{Math.min(searchResponse.perPage! * searchResponse.page!, searchResponse.resultCount)} of
+						{searchResponse.resultCount.toLocaleString("en-US")} results ({searchResponse.pageCount} pages) in {searchResponse.ms} ms
 					{:else}
 						0 results in {searchResponse.ms} ms
 					{/if}
@@ -145,8 +156,9 @@
 			class="backdrop:bg-black/50"
 		>
 			<div class="bg-background light-outline fixed top-[120px] left-1/2 flex h-max w-[450px] -translate-x-1/2 flex-col rounded">
-				<div class="border-b border-gray-700 p-4">
+				<div class="flex items-center justify-between border-b border-gray-700 p-4">
 					<h2>Filter and Sort</h2>
+					<button onclick={resetForm} class="btn">Reset</button>
 				</div>
 				<div class="flex flex-col gap-4 overflow-y-auto p-4">
 					<input bind:value={videoIdValue} type="text" name="id" placeholder="Video ID (GzOs8nQt27g)" class="btn cursor-text! outline-1!" />
