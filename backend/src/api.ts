@@ -18,7 +18,6 @@ function zodDate() {
 }
 
 app.use("*", cors());
-app.use(compress());
 app.use(requestId());
 app.use(
 	rateLimiter({
