@@ -102,7 +102,7 @@ async function downloadAudio(videoId: string, outDir: string) {
 
 async function transcribeAudio(audioPath: string, outPath: string, cleanup: boolean = true) {
 	const proc = Bun.spawn({
-		cmd: ["uv", "run", "main.py", audioPath, outPath],
+		cmd: ["uv", "run", "main.py", "--input", audioPath, "--output", outPath],
 		cwd: path.resolve(__dirname, "../transcriber"),
 	});
 
