@@ -10,7 +10,7 @@ import processVideos from "./jobs/processVideos";
 import registerInterval from "./jobs/registerInterval";
 import startServer from "./jobs/startServer";
 
-export const ytdlp = new YtDlp({ binaryPath: "C:\\Users\\zanes\\Downloads\\yt-dlp.exe" });
+export const ytdlp = new YtDlp();
 export const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
 function exit() {
