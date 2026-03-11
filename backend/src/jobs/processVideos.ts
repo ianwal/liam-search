@@ -1,30 +1,18 @@
-import path from "path";
+import { resolve } from "path";
 import type { PlaylistInfo, VideoInfo } from "ytdlp-nodejs";
 
-import { Job, type JobResult } from ".";
+import { Job } from ".";
+import config from "../config";
 import { db } from "../db";
 import { log } from "../log";
-import { cookiesPath, ytdlp } from "../main";
+import { ytdlp } from "../main";
 import type { VideoCache, VideoMetadata } from "../types";
 import buildIndex from "./buildIndex";
-
-const playlists = [
-	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_YPhchO2f48lssHKENSMAYy",
-	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZYPbJhACQKEiyb43DXunBy",
-	"https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay",
-];
-const uploadDateOverrides: { [id: string]: Date } = {
-	"HGoVx0-0tJ4": new Date("2017-01-01"),
-	"mzGXgJVJPhM": new Date("2018-01-01"),
-	"2dx8Tz_eJY8": new Date("2019-01-01"),
-	"ED1pc5u_HbM": new Date("2020-01-01"),
-	"Xj2vHvMmHF0": new Date("2021-01-01"),
-};
 
 async function fetchVideoInfo(playlistURLs: string[]) {
 	const videosInfo = [];
 	for (const url of playlistURLs) {
-		const playlistInfo = (await ytdlp.getInfoAsync(url, { cookies: cookiesPath })) as PlaylistInfo;
+		const playlistInfo = (await ytdlp.getInfoAsync(url, { cookies: config.core.cookies_path })) as PlaylistInfo;
 		videosInfo.push(...playlistInfo.entries);
 	}
 
@@ -50,21 +38,21 @@ async function updateVideosCache(videoMetadata: VideoMetadata[]) {
 
 			if (cachedVideo) {
 				if (Date.now() > cachedVideo.cacheTimestamp + 14 * 24 * 60 * 60 * 1000) {
-					const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+					const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: config.core.cookies_path })) as VideoInfo;
 					video.uploadTimestamp = videoInfo.timestamp * 1000;
 
 					db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
 				}
 			} else {
-				const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: cookiesPath })) as VideoInfo;
+				const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: config.core.cookies_path })) as VideoInfo;
 				video.uploadTimestamp = videoInfo.timestamp * 1000;
 
 				const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 				query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
 			}
 
-			if (uploadDateOverrides[video.id]) {
-				db.query(`update videos set uploadTimestamp = ? where id = ?`).run(uploadDateOverrides[video.id]!.getTime(), video.id);
+			if (config.overrides[video.id]) {
+				db.query(`update videos set uploadTimestamp = ? where id = ?`).run(config.overrides[video.id]!.getTime(), video.id);
 			}
 		} catch (err: any) {
 			console.error(err);
@@ -77,14 +65,14 @@ async function downloadAudio(videoId: string, outDir: string) {
 	const options = {
 		extractAudio: true,
 		audioFormat: "best",
-		output: path.resolve(__dirname, `${outDir}${videoId}.%(ext)s`),
+		output: resolve(`${outDir}${videoId}.%(ext)s`),
 	};
 
 	let res;
 	try {
 		res = await ytdlp.downloadAsync(videoId, {
 			...options,
-			cookies: cookiesPath,
+			cookies: config.core.cookies_path,
 		});
 	} catch (withCookiesErr: any) {
 		try {
@@ -102,11 +90,13 @@ async function downloadAudio(videoId: string, outDir: string) {
 
 async function transcribeAudio(audioPath: string, outPath: string, cleanup: boolean = true) {
 	const proc = Bun.spawn({
-		cmd: ["uv", "run", "main.py", "--input", audioPath, "--output", outPath],
-		cwd: path.resolve(__dirname, "../transcriber"),
+		cmd: ["uv", "run", "main.py", "--input", audioPath, "--output", outPath, "--device", config.transcriber.device, "--compute_type", config.transcriber.compute_type],
+		cwd: resolve("src/transcriber"),
 	});
 
-	await proc.exited;
+	if ((await proc.exited) != 0) {
+		throw new Error("transciber failed!");
+	}
 
 	const transcription = await Bun.file(outPath).json();
 
@@ -123,7 +113,7 @@ export default new Job(
 	"fetch video info",
 	async () => {
 		try {
-			const videoMetadata = await fetchVideoInfo(playlists);
+			const videoMetadata = await fetchVideoInfo(config.core.playlists);
 			return { status: "success", data: { videoMetadata } };
 		} catch (err) {
 			console.error(err);
@@ -162,18 +152,22 @@ export default new Job(
 							Job.pushQueue(
 								new Job(`transcribe audio (${video.id})`, async () => {
 									if (video.tempAudioPath != null) {
-										const transcription = await transcribeAudio(video.tempAudioPath, path.resolve(__dirname, `../../temp/${video.id}.json`));
+										try {
+											const transcription = await transcribeAudio(video.tempAudioPath, resolve(`./temp/${video.id}.json`));
 
-										db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), video.id);
+											db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), video.id);
 
-										return { status: "success" };
+											Job.pushQueue(buildIndex);
+
+											return { status: "success" };
+										} catch {
+											return { status: "failed" };
+										}
 									} else {
 										return { status: "failed" };
 									}
 								}),
 							);
-
-							Job.pushQueue(buildIndex);
 						}
 
 						return { status: "success" };

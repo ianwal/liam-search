@@ -5,14 +5,14 @@ from pathlib import Path
 import whisperx
 
 
-def transcribe_audio(audio_file: Path) -> str:
+def transcribe_audio(audio_file: Path, device: str, compute_type: str) -> str:
 	print("[transcriber]: running transcriber...")
 
 	print("[transcriber]: loading transcriber model...")
 	model = whisperx.load_model(
 		"large-v3",
-		"cuda",
-		compute_type="float16",
+		device,
+		compute_type=compute_type,
 		language="en",
 		asr_options={
 			"log_prob_threshold": -0.5,
@@ -34,7 +34,7 @@ def transcribe_audio(audio_file: Path) -> str:
 	print("[transcriber]: finished transcribing.")
 
 	model_a, metadata = whisperx.load_align_model(
-		language_code=result["language"], device="cuda"
+		language_code=result["language"], device=device
 	)
 	result = whisperx.align(
 		result["segments"],
@@ -82,9 +82,25 @@ def main():
 		type=Path,
 	)
 
+	parser.add_argument(
+		"--device",
+		help="The device to load the model on.",
+		required=False,
+		default="cpu",
+		choices=["cuda", "cpu"],
+	)
+
+	parser.add_argument(
+		"--compute_type",
+		help="The compute type to use for the model.",
+		required=False,
+		default="default",
+		choices=["default", "float16", "float32", "int8"],
+	)
+
 	args = parser.parse_args()
 
-	save_transcribed_audio(transcribe_audio(args.input), args.output)
+	save_transcribed_audio(transcribe_audio(args.input, args.device, args.compute_type), args.output)
 
 
 if __name__ == "__main__":

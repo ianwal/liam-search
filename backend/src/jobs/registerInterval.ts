@@ -1,13 +1,14 @@
 import { Job } from ".";
-import transcribe from "./processVideos";
+import config from "../config";
+import processVideos from "./processVideos";
 
 export default new Job("register interval", async () => {
 	setInterval(
 		() => {
-			// todo: check if transcribe job is already running
-			Job.pushQueue(transcribe);
+			// todo: check if job is already running
+			Job.pushQueue(processVideos);
 		},
-		6 * 60 * 60 * 1000,
+		config.core.process_interval * 60 * 1000,
 	);
 
 	return { status: "success" };

@@ -1,13 +1,14 @@
 import { Job } from ".";
 import app from "../api";
+import config from "../config";
 
 export default new Job("start server", async () => {
 	Bun.serve({
-		port: parseInt(Bun.env.VITE_PORT!),
+		port: config.api.port,
 		fetch: app.fetch,
 	});
 
-	console.log("serving api at http://localhost:8059");
+	console.log(`serving api at http://localhost:${config.api.port}`);
 
 	return { status: "success" };
 });

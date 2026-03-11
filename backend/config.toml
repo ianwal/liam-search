@@ -1,0 +1,42 @@
+[core]
+logs_dir = "logs"
+cookies_path = "cookies.txt"
+yt_dlp_binary_path = ""
+process_interval = 360 # how often new videos should be checked for and processed in minutes
+playlists = [
+	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_YPhchO2f48lssHKENSMAYy",
+	"https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZYPbJhACQKEiyb43DXunBy",
+	"https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay",
+]
+
+[api]
+port = 8059
+
+[api.rate_limit]
+# 'limit' requests can be made within a sliding window of 'window' seconds
+limit = 10
+window = 30
+
+[transcriber]
+device = "cuda" # cuda/cpu
+compute_type = "float16" # default/float16/float32/int8
+
+[[overrides]]
+id = "HGoVx0-0tJ4"
+date = "2017-01-01"
+
+[[overrides]]
+id = "mzGXgJVJPhM"
+date = "2018-01-01"
+
+[[overrides]]
+id = "2dx8Tz_eJY8"
+date = "2019-01-01"
+
+[[overrides]]
+id = "ED1pc5u_HbM"
+date = "2020-01-01"
+
+[[overrides]]
+id = "Xj2vHvMmHF0"
+date = "2021-01-01"
