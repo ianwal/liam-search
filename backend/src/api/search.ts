@@ -1,13 +1,8 @@
-import { compress } from "@hono/bun-compress";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { rateLimiter } from "hono-rate-limiter";
-import { cors } from "hono/cors";
-import { requestId } from "hono/request-id";
 import { z } from "zod";
 
-import { log } from "./log";
-import { search } from "./search";
+import { search } from "../search";
 
 const app = new Hono<{ Variables: { logData: any } }>();
 
@@ -17,33 +12,8 @@ function zodDate() {
 	});
 }
 
-app.use("*", cors());
-app.use(requestId());
-app.use(
-	rateLimiter({
-		windowMs: 30 * 1000,
-		limit: 10,
-		keyGenerator: (c) => c.req.header("x-forwarded-for") ?? "",
-	}),
-);
-app.use("*", async (c, next) => {
-	await next();
-
-	const res = c.res.clone() as Response;
-
-	log("API", c.res.status >= 400 ? "ERROR" : "INFO", {
-		request_id: c.get("requestId"),
-		method: c.req.method,
-		path: c.req.path,
-		query: c.req.path == "/search" ? "[REDACTED]" : c.req.query(),
-		status: res.status,
-		message: res.statusText,
-		...(c.get("logData") || {}),
-	});
-});
-
 app.get(
-	"/search",
+	"/",
 	zValidator(
 		"query",
 		z.object({

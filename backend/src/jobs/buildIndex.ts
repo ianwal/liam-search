@@ -1,6 +1,7 @@
 import { Job } from ".";
 import { db } from "../db";
 import { msClient } from "../search";
+import status from "../status";
 
 export default new Job("build index", async () => {
 	const videos: any[] = db.query("select id, uploadTimestamp, transcript from videos where transcript is not null").all();
@@ -22,6 +23,8 @@ export default new Job("build index", async () => {
 	}
 
 	await msClient.tasks.waitForTasks(indexTasks, { timeout: 0 });
+
+	status.set(200, "READY");
 
 	return { status: "success" };
 });

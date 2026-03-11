@@ -26,9 +26,9 @@ function exit() {
 process.on("SIGINT", exit);
 
 Job.pushQueue(
+	startServer,
 	registerInterval,
 	buildIndex,
-	startServer,
 	downloadYtDlp,
 	checkForCookies,
 	transcribe,
