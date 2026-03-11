@@ -1,7 +1,7 @@
 import { Database } from "bun:sqlite";
-import path from "path";
+import { resolve } from "path";
 
-export const db = new Database(path.resolve(__dirname, "../db.sqlite"), { create: true, strict: true });
+export const db = new Database(resolve("db.sqlite"), { create: true, strict: true });
 
 db.run(`create table if not exists videos(
 	id text not null primary key,

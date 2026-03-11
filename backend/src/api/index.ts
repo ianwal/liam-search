@@ -3,6 +3,7 @@ import { rateLimiter } from "hono-rate-limiter";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 
+import config from "../config";
 import { log } from "../log";
 import search from "./search";
 import status from "./status";
@@ -13,8 +14,8 @@ app.use("*", cors());
 app.use(requestId());
 app.use(
 	rateLimiter({
-		windowMs: 30 * 1000,
-		limit: 10,
+		windowMs: config.api.rate_limit.window * 1000,
+		limit: config.api.rate_limit.limit,
 		keyGenerator: (c) => c.req.header("x-forwarded-for") ?? "",
 	}),
 );

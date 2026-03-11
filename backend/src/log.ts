@@ -1,11 +1,13 @@
 import { mkdir } from "fs/promises";
 import fs from "fs/promises";
-import path from "path";
+import { resolve } from "path";
+
+import config from "./config";
 
 export type LogLevel = "INFO" | "ERROR";
 export type LogType = "API" | "JOB" | "INFO";
 
-await mkdir(path.resolve(__dirname, "../logs"), { recursive: true });
+await mkdir(config.core.logs_dir, { recursive: true });
 
 function removeEmptyKeys(obj: any) {
 	return Object.fromEntries(Object.entries(obj).filter(([, value]) => value != null && value != ""));
@@ -20,5 +22,5 @@ export function log(type: LogType, level: LogLevel, data: { [key: string]: any }
 		console.log(consoleOverride ? consoleOverride : log);
 	}
 
-	fs.appendFile(path.resolve(__dirname, `../logs/${type.toLowerCase()}.log`), `${JSON.stringify(log)}\n`);
+	fs.appendFile(resolve(`${config.core.logs_dir}/${type.toLowerCase()}.log`), `${JSON.stringify(log)}\n`);
 }

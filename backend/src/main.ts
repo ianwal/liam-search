@@ -1,6 +1,6 @@
-import path from "path";
 import { YtDlp } from "ytdlp-nodejs";
 
+import config from "./config";
 import { db } from "./db";
 import { Job } from "./jobs";
 import buildIndex from "./jobs/buildIndex";
@@ -10,10 +10,9 @@ import processVideos from "./jobs/processVideos";
 import registerInterval from "./jobs/registerInterval";
 import startServer from "./jobs/startServer";
 
-export const ytdlp = new YtDlp();
-export const cookiesPath = path.resolve(__dirname, "../cookies.txt");
+export const ytdlp = new YtDlp({ binaryPath: config.core.yt_dlp_binary_path });
 
-function exit() {
+process.on("SIGINT", () => {
 	console.log("clearing queue...");
 	Job.clearQueue();
 
@@ -21,8 +20,6 @@ function exit() {
 	db.close(false);
 
 	process.exit();
-}
-
-process.on("SIGINT", exit);
+});
 
 Job.pushQueue(startServer, registerInterval, buildIndex, downloadYtDlp, checkForCookies, processVideos);

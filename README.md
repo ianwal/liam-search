@@ -25,7 +25,7 @@ Currently using these playlists:
 - An NVIDIA RTX GPU with at least 6 GB VRAM (i think)
 
 > [!CAUTION]
-> If you have problems with downloading videos, use [yt-dlp 2026.03.03](https://github.com/yt-dlp/yt-dlp/releases/tag/2026.03.03) and override the binary path [here](https://github.com/zaneshaw/liam-search/blob/main/backend/src/main.ts#L13).
+> If you have problems with downloading videos, use [yt-dlp 2026.03.03](https://github.com/yt-dlp/yt-dlp/releases/tag/2026.03.03) and set the binary path in `backend/config.toml`
 
 ### Backend
 
@@ -33,12 +33,13 @@ Currently using these playlists:
 2. Install dependencies with `bun i`
 3. Copy **.env.example** to **.env** and configure your Meilisearch details
 4. Download your YouTube cookies while signed-in with **Get cookies.txt LOCALLY** ([chrome](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc), [firefox](https://addons.mozilla.org/en-US/firefox/addon/get-cookies-txt-locally/)) and put them in the backend directory as **cookies.txt** (`liam-search/backend/cookies.txt`)
-5. Navigate to the **backend/src/transcriber** directory
-6. Install dependencies with `uv sync`
-7. Navigate back to the **backend** directory and run with `bun dev`
+5. Modify config in **config.toml** if needed
+6. Navigate to the **backend/src/transcriber** directory
+7. Install dependencies with `uv sync`
+8. Navigate back to the **backend** directory and run with `bun dev`
 
 > [!TIP]
-> Modify the **playlists** array in **backend/src/jobs/transcribe.ts** for testing.
+> Modify the **playlists** array in **backend/config.toml** for testing.
 
 ### Frontend
 
