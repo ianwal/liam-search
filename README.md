@@ -35,8 +35,6 @@ Currently using these playlists:
 7. Navigate back to the **backend** directory and run with `bun dev`
 
 > [!TIP]
-> Use the 2026/03/11 database backup ([db_example.sqlite](/db_example.sqlite)) as a starting point (rename to **db.sqlite**).
-> <br />_or_<br />
 > Modify the **playlists** array in **backend/src/jobs/transcribe.ts** for testing.
 
 ### Frontend

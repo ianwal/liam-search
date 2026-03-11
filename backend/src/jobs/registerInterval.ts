@@ -1,5 +1,5 @@
 import { Job } from ".";
-import transcribe from "./transcribe";
+import transcribe from "./processVideos";
 
 export default new Job("register interval", async () => {
 	setInterval(

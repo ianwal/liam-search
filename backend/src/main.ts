@@ -6,11 +6,11 @@ import { Job } from "./jobs";
 import buildIndex from "./jobs/buildIndex";
 import checkForCookies from "./jobs/checkForCookies";
 import downloadYtDlp from "./jobs/downloadYtDlp";
+import processVideos from "./jobs/processVideos";
 import registerInterval from "./jobs/registerInterval";
 import startServer from "./jobs/startServer";
-import transcribe from "./jobs/transcribe";
 
-export const ytdlp = new YtDlp();
+export const ytdlp = new YtDlp({ binaryPath: "C:\\Users\\zanes\\Downloads\\yt-dlp.exe" });
 export const cookiesPath = path.resolve(__dirname, "../cookies.txt");
 
 function exit() {
@@ -25,11 +25,4 @@ function exit() {
 
 process.on("SIGINT", exit);
 
-Job.pushQueue(
-	startServer,
-	registerInterval,
-	buildIndex,
-	downloadYtDlp,
-	checkForCookies,
-	transcribe,
-);
+Job.pushQueue(startServer, registerInterval, buildIndex, downloadYtDlp, checkForCookies, processVideos);
