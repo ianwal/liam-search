@@ -3,10 +3,10 @@
 Search words/phrases from every Liam VOD after July 2023. Inspired by [yardsear.ch](https://yardsear.ch/).
 
 Currently using these playlists:
+
 - https://www.youtube.com/playlist?list=PL-dR2WR6nR_YPhchO2f48lssHKENSMAYy
 - https://www.youtube.com/playlist?list=PL-dR2WR6nR_ZYPbJhACQKEiyb43DXunBy
 - https://www.youtube.com/playlist?list=PL4p5tSr0nlvikGvf0bhqFuQoFAH7Iw9Ay
-
 
 ## Official URLs
 
@@ -23,6 +23,9 @@ Currently using these playlists:
 - [CUDA Toolkit 12.8.1](https://developer.nvidia.com/cuda-12-8-1-download-archive)
 - [Meilisearch](https://www.meilisearch.com/docs/learn/self_hosted/getting_started_with_self_hosted_meilisearch)
 - An NVIDIA RTX GPU with at least 6 GB VRAM (i think)
+
+> [!CAUTION]
+> If you have problems with downloading videos, use [yt-dlp 2026.03.03](https://github.com/yt-dlp/yt-dlp/releases/tag/2026.03.03) and override the binary path [here](https://github.com/zaneshaw/liam-search/blob/main/backend/src/main.ts#L13).
 
 ### Backend
 
@@ -50,5 +53,5 @@ Currently using these playlists:
 - [ ] **Twitch clips**: index all Liam Twitch clips before the oldest VOD in the current index
 - [ ] **Better transcription**: i hate whisperX and python >:(
 - [ ] **Config file**: allow for more configuration without modifying the code
-	- [ ] **GPU/CPU switch**: switch between GPU mode and CPU compat mode
+    - [ ] **GPU/CPU switch**: switch between GPU mode and CPU compat mode
 - [ ] **Better error handling**
