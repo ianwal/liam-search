@@ -1,4 +1,4 @@
-import { MeiliSearch } from "meilisearch";
+import { Index, MeiliSearch, MeiliSearchApiError } from "meilisearch";
 
 import type { SearchResponse, SearchResult } from "@/types";
 
@@ -66,8 +66,8 @@ export async function search(
 				},
 				seconds,
 				text,
-				previousText: ((await msClient.index("segments").getDocument(previousId)).text as string) ?? null,
-				nextText: ((await msClient.index("segments").getDocument(nextId)).text as string) ?? null,
+				previousText: ((await getDocument(index, previousId))?.text as string) ?? null,
+				nextText: ((await getDocument(index, nextId))?.text as string) ?? null,
 			});
 		}
 	}
@@ -84,4 +84,16 @@ export async function search(
 		resultCount: res.totalHits,
 		results,
 	};
+}
+
+async function getDocument(index: Index, documentId: string | number) {
+	try {
+		return await index.getDocument(documentId);
+	} catch (err: any) {
+		if (err instanceof MeiliSearchApiError && err.cause?.code == "document_not_found") {
+			return null;
+		}
+
+		throw new Error();
+	}
 }
