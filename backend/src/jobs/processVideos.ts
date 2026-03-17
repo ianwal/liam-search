@@ -138,7 +138,7 @@ export default new Job(
 								Job.pushQueue(
 									new Job(`download audio (${video.id})`, async () => {
 										try {
-											const path = await downloadAudio(video.id, "../../temp/");
+											const path = await downloadAudio(video.id, "temp/");
 
 											db.query(`update videos set tempAudioPath = ? where id = ?`).run(path, video.id);
 											return { status: "success" };
