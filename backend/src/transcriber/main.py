@@ -41,7 +41,7 @@ def transcribe_audio(audio_file: Path, device: str, compute_type: str) -> str:
 		model_a,
 		metadata,
 		audio,
-		"cuda",
+		device,
 		return_char_alignments=False,
 	)
 
