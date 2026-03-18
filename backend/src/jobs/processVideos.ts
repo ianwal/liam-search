@@ -55,8 +55,7 @@ async function updateVideosCache(videoMetadata: VideoMetadata[]) {
 				db.query(`update videos set uploadTimestamp = ? where id = ?`).run(config.overrides[video.id]!.getTime(), video.id);
 			}
 		} catch (err: any) {
-			console.error(err);
-			log("INFO", "ERROR", { message: `failed to get video info (${video.id})! skipping...`, error: err.stack });
+			log("INFO", "ERROR", { message: `failed to get video info (${video.id})! skipping...`, error: err.stack }, err);
 		}
 	}
 }
@@ -80,7 +79,7 @@ async function downloadAudio(videoId: string, outDir: string) {
 			res = await ytdlp.downloadAsync(videoId, options);
 		} catch (withoutCookiesErr: any) {
 			const errorMessage = `failed to download audio (${videoId})! skipping...`;
-			log("INFO", "ERROR", { message: errorMessage });
+			log("INFO", "ERROR", { message: errorMessage, error: withoutCookiesErr.stack });
 			throw new Error(errorMessage);
 		}
 	}
@@ -115,8 +114,8 @@ export default new Job(
 		try {
 			const videoMetadata = await fetchVideoInfo(config.core.playlists);
 			return { status: "success", data: { videoMetadata } };
-		} catch (err) {
-			console.error(err);
+		} catch (err: any) {
+			log("INFO", "ERROR", { message: err }, err);
 			return { status: "failed_queue" };
 		}
 	},
@@ -160,7 +159,8 @@ export default new Job(
 											Job.pushQueue(buildIndex);
 
 											return { status: "success" };
-										} catch {
+										} catch (err: any) {
+											log("INFO", "ERROR", { message: err }, err);
 											return { status: "failed" };
 										}
 									} else {

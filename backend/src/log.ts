@@ -19,7 +19,7 @@ export function log(type: LogType, level: LogLevel, data: { [key: string]: any }
 	if (level == "INFO") {
 		console.log(consoleOverride ? consoleOverride : log);
 	} else if (level == "ERROR") {
-		console.log(consoleOverride ? consoleOverride : log);
+		console.error(consoleOverride ? consoleOverride : log);
 	}
 
 	fs.appendFile(resolve(`${config.core.logs_dir}/${type.toLowerCase()}.log`), `${JSON.stringify(log)}\n`);
