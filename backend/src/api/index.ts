@@ -6,6 +6,8 @@ import { requestId } from "hono/request-id";
 import config from "../config";
 import { log } from "../log";
 import search from "./search";
+import stats from "./stats";
+import jobs from "./jobs";
 import status from "./status";
 
 const app = new Hono<{ Variables: { logData: any } }>();
@@ -36,6 +38,8 @@ app.use("*", async (c, next) => {
 });
 
 app.route("/status", status);
+app.route("/stats", stats);
+app.route("/jobs", jobs);
 app.route("/search", search);
 
 export default app;
