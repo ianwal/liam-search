@@ -156,7 +156,7 @@ export default new Job(
 
 											db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), video.id);
 
-											Job.pushQueue(buildIndex);
+											Job.unshiftQueue(buildIndex);
 
 											return { status: "success" };
 										} catch (err: any) {

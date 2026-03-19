@@ -61,6 +61,11 @@ export class Job {
 		Job.runQueue();
 	}
 
+	static unshiftQueue(...job: Job[]) {
+		Job.queue.unshift(...job);
+		Job.runQueue();
+	}
+
 	private static async runQueue() {
 		if (Job.queueRunning) return;
 
