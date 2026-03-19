@@ -31,8 +31,8 @@ def transcribe_audio(audio_file: Path, device: str, compute_type: str) -> str:
 
 	print("[transcriber]: transcribing...")
 	result = model.transcribe(audio, batch_size=8, chunk_size=8)
-	print("[transcriber]: finished transcribing.")
 
+	print("[transcriber]: aligning...")
 	model_a, metadata = whisperx.load_align_model(
 		language_code=result["language"], device=device
 	)
@@ -44,6 +44,8 @@ def transcribe_audio(audio_file: Path, device: str, compute_type: str) -> str:
 		device,
 		return_char_alignments=False,
 	)
+
+	print("[transcriber]: finished!")
 
 	processed_result = [
 		{
@@ -87,7 +89,7 @@ def main():
 		help="The device to load the model on.",
 		required=False,
 		default="cpu",
-		choices=["cuda", "cpu"],
+		choices=["cpu", "cuda"],
 	)
 
 	parser.add_argument(
