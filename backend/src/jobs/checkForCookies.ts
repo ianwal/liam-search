@@ -1,14 +1,12 @@
 import { exists } from "fs/promises";
 import { resolve } from "path";
 
-import { Job } from ".";
 import config from "../config";
+import { Job, JobResult } from "../types";
 
 export default new Job("check for cookies.txt", async () => {
 	if (!(await exists(config.core.cookies_path))) {
 		console.error("no cookies.txt");
-		return { status: "failed_queue" };
+		return JobResult.FAIL_QUEUE;
 	}
-
-	return { status: "success" };
 });

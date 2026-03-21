@@ -1,64 +1,11 @@
 import { resolve } from "path";
-import type { PlaylistInfo, VideoInfo } from "ytdlp-nodejs";
 
-import { Job } from ".";
 import config from "../config";
 import { db } from "../db";
 import { log } from "../log";
-import { ytdlp } from "../main";
-import type { VideoCache, VideoMetadata } from "../types";
+import { queue, ytdlp } from "../main";
+import { Job, JobResult } from "../types";
 import buildIndex from "./buildIndex";
-
-async function fetchVideoInfo(playlistURLs: string[]) {
-	const videosInfo = [];
-	for (const url of playlistURLs) {
-		const playlistInfo = (await ytdlp.getInfoAsync(url, { cookies: config.core.cookies_path })) as PlaylistInfo;
-		videosInfo.push(...playlistInfo.entries);
-	}
-
-	if (videosInfo.length > 0) {
-		return videosInfo.map((video: any) => ({
-			id: video.id,
-			title: video.title,
-			thumbnailUrl: `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`,
-			duration: video.duration,
-			uploader: video.uploader,
-			uploaderUrl: video.uploader_url,
-			viewCount: video.view_count,
-		}));
-	} else {
-		throw new Error("playlist fetch error. does it have any videos?");
-	}
-}
-
-async function updateVideosCache(videoMetadata: VideoMetadata[]) {
-	for (const video of videoMetadata) {
-		try {
-			const cachedVideo = db.query("select * from videos where id = ?").get(video.id) as VideoCache;
-
-			if (cachedVideo) {
-				if (Date.now() > cachedVideo.cacheTimestamp + 14 * 24 * 60 * 60 * 1000) {
-					const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: config.core.cookies_path })) as VideoInfo;
-					video.uploadTimestamp = videoInfo.timestamp * 1000;
-
-					db.query(`update videos set title = ?, viewCount = ?, cacheTimestamp = ? where id = ?`).run(videoInfo.title, videoInfo.view_count, Date.now(), video.id);
-				}
-			} else {
-				const videoInfo = (await ytdlp.getInfoAsync(`https://www.youtube.com/watch?v=${video.id}`, { cookies: config.core.cookies_path })) as VideoInfo;
-				video.uploadTimestamp = videoInfo.timestamp * 1000;
-
-				const query = db.query(`insert into videos values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-				query.run(video.id, video.title, video.thumbnailUrl, video.uploadTimestamp, video.duration, video.uploader, video.uploaderUrl, video.viewCount, null, null, Date.now());
-			}
-
-			if (config.overrides[video.id]) {
-				db.query(`update videos set uploadTimestamp = ? where id = ?`).run(config.overrides[video.id]!.getTime(), video.id);
-			}
-		} catch (err: any) {
-			log("INFO", "ERROR", { message: `failed to get video info (${video.id})! skipping...`, error: err.stack }, err);
-		}
-	}
-}
 
 async function downloadAudio(videoId: string, outDir: string) {
 	const options = {
@@ -107,75 +54,49 @@ async function transcribeAudio(audioPath: string, outPath: string, cleanup: bool
 	return transcription;
 }
 
-// kinda scuffed and doesn't really use the job system correctly
-export default new Job(
-	"fetch video info",
-	async () => {
-		try {
-			const videoMetadata = await fetchVideoInfo(config.core.playlists);
-			return { status: "success", data: { videoMetadata } };
-		} catch (err: any) {
-			log("INFO", "ERROR", { message: err }, err);
-			return { status: "failed_queue" };
-		}
-	},
-	(res) => {
-		if (res.status == "success") {
-			Job.pushQueue(
-				new Job("update videos cache", async () => {
-					await updateVideosCache(res.data!.videoMetadata as VideoMetadata[]);
+export default new Job("transcribe new videos", async () => {
+	const newVideos = db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[];
 
-					return { status: "success" };
-				}),
-				new Job("transcribe new videos", async () => {
-					const newVideos = db.query("select id, tempAudioPath from videos where transcript is null").all() as { id: string; tempAudioPath: string | null }[];
+	if (newVideos.length > 0) {
+		for (const video of newVideos) {
+			// todo: add subjobs or something
+			if (video.tempAudioPath == null || !(await Bun.file(video.tempAudioPath).exists())) {
+				queue.push(
+					new Job(`download audio (${video.id})`, async () => {
+						try {
+							const path = await downloadAudio(video.id, "temp/");
 
-					if (newVideos.length > 0) {
-						for (const video of newVideos) {
-							// todo: add subjobs or something
-							if (video.tempAudioPath == null || !(await Bun.file(video.tempAudioPath).exists())) {
-								Job.pushQueue(
-									new Job(`download audio (${video.id})`, async () => {
-										try {
-											const path = await downloadAudio(video.id, "temp/");
-
-											db.query(`update videos set tempAudioPath = ? where id = ?`).run(path, video.id);
-											return { status: "success" };
-										} catch (err) {
-											return { status: "failed" };
-										}
-									}),
-								);
-							}
-
-							Job.pushQueue(
-								new Job(`transcribe audio (${video.id})`, async () => {
-									if (video.tempAudioPath != null) {
-										try {
-											const transcription = await transcribeAudio(video.tempAudioPath, resolve(`./temp/${video.id}.json`));
-
-											db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), video.id);
-
-											Job.unshiftQueue(buildIndex);
-
-											return { status: "success" };
-										} catch (err: any) {
-											log("INFO", "ERROR", { message: err }, err);
-											return { status: "failed" };
-										}
-									} else {
-										return { status: "failed" };
-									}
-								}),
-							);
+							db.query(`update videos set tempAudioPath = ? where id = ?`).run(path, video.id);
+							video.tempAudioPath = path;
+						} catch (err: any) {
+							log("INFO", "ERROR", { message: err }, err);
+							return JobResult.FAIL;
 						}
+					}),
+				);
+			}
 
-						return { status: "success" };
+			queue.push(
+				new Job(`transcribe audio (${video.id})`, async () => {
+					if (video.tempAudioPath != null) {
+						try {
+							const transcription = await transcribeAudio(video.tempAudioPath, resolve(`./temp/${video.id}.json`));
+
+							db.query(`update videos set tempAudioPath = null, transcript = ? where id = ?`).run(JSON.stringify(transcription), video.id);
+
+							queue.insertNext(buildIndex);
+						} catch (err: any) {
+							log("INFO", "ERROR", { message: err }, err);
+							return JobResult.FAIL;
+						}
 					} else {
-						return { status: "skipped" };
+						log("INFO", "ERROR", { message: "temporary audio path is null" });
+						return JobResult.FAIL;
 					}
 				}),
 			);
 		}
-	},
-);
+	} else {
+		return JobResult.SKIP;
+	}
+});
