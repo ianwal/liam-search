@@ -5,9 +5,9 @@ import { requestId } from "hono/request-id";
 
 import config from "../config";
 import { log } from "../log";
+import jobs from "./jobs";
 import search from "./search";
 import stats from "./stats";
-import jobs from "./jobs";
 import status from "./status";
 
 const app = new Hono<{ Variables: { logData: any } }>();
@@ -15,6 +15,7 @@ const app = new Hono<{ Variables: { logData: any } }>();
 app.use("*", cors());
 app.use(requestId());
 app.use(
+	"/search",
 	rateLimiter({
 		windowMs: config.api.rate_limit.window * 1000,
 		limit: config.api.rate_limit.limit,
