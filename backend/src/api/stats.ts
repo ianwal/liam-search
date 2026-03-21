@@ -6,6 +6,7 @@ const app = new Hono<{ Variables: { logData: any } }>();
 
 app.get("/", async (c) => {
 	const stats = {
+		uptime_s: Math.floor(process.uptime()),
 		coverage: {
 			total: (db.query("select count(*) from videos").get() as any)["count(*)"],
 			transcribed: (db.query("select count(transcript) from videos").get() as any)["count(transcript)"],
