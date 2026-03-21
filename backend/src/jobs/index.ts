@@ -73,6 +73,7 @@ export class Job {
 
 		while (Job.queue.length > 0) {
 			const job = Job.queue[0]!;
+			Job.queue.shift();
 			const res = await job.run();
 
 			let clearQueue = false;
@@ -99,8 +100,6 @@ export class Job {
 
 			if (clearQueue) {
 				Job.clearQueue();
-			} else {
-				Job.queue.shift();
 			}
 		}
 
