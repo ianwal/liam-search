@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { msClient } from "../search";
 import status from "../status";
-import { Job } from "../types";
+import { Job } from "@zaneshaw/squeue";
 
 export default new Job("build index", async () => {
 	const videos: any[] = db.query("select id, uploadTimestamp, transcript from videos where transcript is not null").all();

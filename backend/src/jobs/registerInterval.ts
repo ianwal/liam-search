@@ -1,6 +1,6 @@
 import config from "../config";
 import { queue } from "../main";
-import { Job } from "../types";
+import { Job } from "@zaneshaw/squeue";
 import processVideos from "./processVideos";
 
 export default new Job("register interval", () => {

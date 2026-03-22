@@ -4,7 +4,7 @@ import config from "../config";
 import { db } from "../db";
 import { log } from "../log";
 import { ytdlp } from "../main";
-import { Job, JobResult } from "../types";
+import { Job, JobResult } from "@zaneshaw/squeue";
 import type { VideoCache, VideoMetadata } from "../types";
 
 async function fetchVideoInfo(playlistURLs: string[]) {

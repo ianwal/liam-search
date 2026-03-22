@@ -19,6 +19,7 @@
   "dependencies": {
     "@hono/bun-compress": "^0.1.0",
     "@hono/zod-validator": "^0.7.6",
+    "@zaneshaw/squeue": "^1.1.0",
     "hono": "^4.12.2",
     "hono-rate-limiter": "^0.5.3",
     "meilisearch": "^0.55.0",

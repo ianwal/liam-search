@@ -4,7 +4,7 @@ import config from "../config";
 import { db } from "../db";
 import { log } from "../log";
 import { queue, ytdlp } from "../main";
-import { Job, JobResult } from "../types";
+import { Job, JobResult } from "@zaneshaw/squeue";
 import buildIndex from "./buildIndex";
 
 async function downloadAudio(videoId: string, outDir: string) {
