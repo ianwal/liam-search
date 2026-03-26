@@ -40,6 +40,7 @@ export async function search(
 			break;
 	}
 
+	console.log(options.to)
 	const filterArr = [`videoTimestamp >= ${options.from} AND videoTimestamp < ${options.to}`];
 	if (options.id) filterArr.push(`videoId = "${options.id}"`);
 
@@ -71,8 +72,6 @@ export async function search(
 			});
 		}
 	}
-
-	// results = results.filter((result) => result.video.uploadTimestamp >= options.from && result.video.uploadTimestamp <= options.to);
 
 	const searchMs = parseFloat((performance.now() - startTime).toFixed(2));
 

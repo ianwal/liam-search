@@ -1,5 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
+import { DateTime } from "luxon";
 import { z } from "zod";
 
 import { search } from "../search";
@@ -36,8 +37,8 @@ app.get(
 		const response = await search(query, {
 			sort,
 			match,
-			from: fromMs,
-			to: toMs,
+			from: DateTime.fromMillis(fromMs).minus({ days: 1 }).endOf("day").toMillis(),
+			to: DateTime.fromMillis(toMs).plus({ days: 1 }).startOf("day").toMillis(),
 			id,
 			page,
 			perPage,

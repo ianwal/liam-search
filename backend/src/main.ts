@@ -53,4 +53,5 @@ process.on("SIGINT", () => {
 	process.exit();
 });
 
-queue.push(startServer, registerInterval, buildIndex, downloadYtDlp, checkForCookies, updateVideosCache, processVideos);
+queue.push(startServer, registerInterval, processVideos);
+// queue.push(startServer, registerInterval, buildIndex, downloadYtDlp, checkForCookies, updateVideosCache, processVideos);
