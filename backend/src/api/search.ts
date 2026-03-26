@@ -20,7 +20,7 @@ app.get(
 			query: z.string().transform((q) => q.replaceAll('"', "")),
 			id: z.string().optional(),
 			from: zodDate().catch("1970-01-01"),
-			to: zodDate().catch(new Date().toISOString().split("T")[0] as string),
+			to: zodDate().catch(() => new Date().toISOString().split("T")[0] as string),
 			sort: z.enum(["best", "latest", "oldest"]).default("best"),
 			match: z.enum(["all", "any"]).default("all"),
 			page: z.coerce.number().int().positive().default(1),
